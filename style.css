@@ -3,21 +3,21 @@
 /* Layout: phone-app column (max 480px) — sticky header, scrolling screens, bottom tab bar, bottom sheets. */
 :root{
   --bg:#F6EFE6; --surface:#FFFCF7; --surface2:#F1E6D9; --ink:#32251E; --muted:#756354; --line:#E3D3C2;
-  --leaf:#B75D40; --leaf-ink:#FFFFFF; --forest:#713E2C; --leaf-soft:#F1DDD1;
+  --leaf:#2F7D4A; --leaf-ink:#FFFFFF; --forest:#245C38; --leaf-soft:#DDEFE1;
   --sun:#D49A42; --sun-soft:#F8E9C9; --berry:#B94D3D; --berry-soft:#F5DDD6; --sky:#EADAC8;
-  --shadow:0 6px 24px rgba(93,55,32,.12);
+  --shadow:0 6px 24px rgba(36,92,56,.14);
   --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
   --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:18px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#201914; --surface:#2B211B; --surface2:#382A22; --ink:#F4E9DC; --muted:#C3AE9B; --line:#4A372B;
-  --leaf:#D98763; --leaf-ink:#241710; --forest:#F0B08E; --leaf-soft:#493025;
+  --leaf:#75C98A; --leaf-ink:#142819; --forest:#A6E3B4; --leaf-soft:#243B2B;
   --sun:#E7B65B; --sun-soft:#43341E; --berry:#EF8975; --berry-soft:#482923; --sky:#30241D;
   --shadow:0 6px 24px rgba(0,0,0,.35); color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#201914; --surface:#2B211B; --surface2:#382A22; --ink:#F4E9DC; --muted:#C3AE9B; --line:#4A372B;
-  --leaf:#D98763; --leaf-ink:#241710; --forest:#F0B08E; --leaf-soft:#493025;
+  --leaf:#75C98A; --leaf-ink:#142819; --forest:#A6E3B4; --leaf-soft:#243B2B;
   --sun:#E7B65B; --sun-soft:#43341E; --berry:#EF8975; --berry-soft:#482923; --sky:#30241D;
   --shadow:0 6px 24px rgba(0,0,0,.35); color-scheme:dark }
 html,body{height:100%}
@@ -330,3 +330,21 @@ body.simple-view .secondary-feature{display:none!important}
 .fill-sun{background:var(--sun)}
 .pet-message{max-width:100%;text-align:center}
 .quiz-title{font-family:var(--f-body);font-size:1.05rem}
+.impact-entry{grid-template-columns:auto minmax(0,1fr) auto;align-items:center;text-align:left;cursor:pointer}
+.impact-entry-mark{width:42px;height:42px;border-radius:14px;background:var(--leaf-soft);color:var(--forest);display:grid;place-items:center}
+.impact-entry-mark svg{width:24px;height:24px}
+.impact-hero{display:grid;gap:12px;padding:16px;border-radius:20px;background:var(--leaf-soft)}
+.impact-hero .stat b{font-size:1.2rem}
+.proof-photo{position:relative;overflow:hidden}
+.proof-image{position:relative;display:block;width:100%;min-width:0}
+.proof-image img{display:block;width:100%;height:175px;max-height:260px;border-radius:12px;object-fit:cover}
+.proof-stamp{position:absolute;left:6px;right:6px;bottom:6px;max-width:calc(100% - 12px);padding:5px 8px;border-radius:8px;background:rgba(24,29,24,.84);color:#fff;font-size:.62rem;font-weight:700;overflow-wrap:anywhere}
+.proof-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.proof-pair figure{min-width:0;margin:0;display:grid;gap:5px}
+.proof-pair .proof-image img{height:130px}
+.proof-pair figcaption{font-size:.7rem;color:var(--muted)}
+.company-row{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--line)}
+.heat-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(50px,1fr) 26px;align-items:center;gap:8px;padding-block:5px;font-size:.82rem}
+.heat-row .lb-bar{height:8px;border-radius:9px;background:var(--berry)}
+.season-rewards{display:flex;flex-wrap:wrap;gap:6px}
+.season-skin .pet-svg{filter:hue-rotate(-24deg) saturate(1.2)}
