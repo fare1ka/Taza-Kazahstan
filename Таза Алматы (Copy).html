@@ -1,0 +1,1316 @@
+﻿<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="style.css"></head><body>
+<title>Таза Алматы</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Golos+Text:wght@400;500;600;700&display=swap">
+
+
+<div id="splash"><div class="splash-in"><div class="logo" id="splashLogo"></div><div class="spin"></div><p class="muted small">Загружаем данные города…</p></div></div>
+<div id="onboard" hidden></div>
+<div id="app" hidden>
+  <header class="top"><div class="wrap top-in">
+    <div class="logo" id="topLogo"></div>
+    <div class="row top-actions"><button class="accessibility-toggle" id="simpleViewToggle" type="button" aria-pressed="false" aria-label="Включить простой режим: крупный текст и меньше разделов">Крупный текст</button><span id="modeBadge"></span><button class="pill" id="pointsPill" type="button"></button></div>
+  </div></header>
+  <main class="wrap">
+    <section class="screen" id="s-home"></section>
+    <section class="screen" id="s-map" hidden></section>
+    <section class="screen" id="s-events" hidden></section>
+    <section class="screen" id="s-rank" hidden></section>
+    <section class="screen" id="s-pet" hidden></section>
+    <section class="screen" id="s-ai" hidden></section>
+  </main>
+  <button class="fab" id="fab" type="button" aria-label="ИИ-ассистент"></button>
+  <nav class="tabs" id="tabs"></nav>
+</div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+/* ============ icons ============ */
+const I = {
+  leaf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19c3-4 6-6 9-8"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>',
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M16 5h3a3 3 0 0 1-3 4M8 5H5a3 3 0 0 0 3 4M12 13v4M8 21h8M9 17h6"/></svg>',
+  spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>',
+  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 13h18M12 9v12M12 9c-2-4-6-4-6-1s6 1 6 1zM12 9c2-4 6-4 6-1s-6 1-6 1z"/></svg>',
+  coin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5c1.5 2.5 5.5 2.5 7-1-2-.5-4.5-.5-7 1zM12 8v2"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-4 3-6 6.5-6s6 2 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3.3 2.6 3.5 6"/></svg>',
+  baby:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="9" cy="11" r=".6" fill="currentColor"/><circle cx="15" cy="11" r=".6" fill="currentColor"/><path d="M9.5 15c1.5 1.2 3.5 1.2 5 0M12 3.5c-1 1.5 0 3 1.5 2.5"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>',
+  brief:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7z"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+};
+const LOGO = '<svg viewBox="0 0 32 32"><rect width="32" height="32" rx="10" fill="var(--leaf)"/><path d="M6 23l6-9 4 5 3-4 7 8z" fill="var(--leaf-ink)" opacity=".9"/><path d="M19 7c-4 0-6 3-6 6 3 0 6-2 6-6z" fill="var(--sun)"/></svg><span>Таза Алматы</span>';
+
+/* ============ helpers ============ */
+const $ = (s, r=document) => r.querySelector(s);
+function applyPercentValues(root){
+  root.querySelectorAll("[data-percent]").forEach(el=>{
+    el.style.setProperty("--percent", `${Number(el.dataset.percent)||0}%`);
+  });
+}
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const MONTHS = ["янв","фев","мар","апр","мая","июн","июл","авг","сен","окт","ноя","дек"];
+function fmtDate(iso){ const d=new Date(iso); if(isNaN(d)) return ""; return d.getDate()+" "+MONTHS[d.getMonth()]+", "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function dayKey(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function ago(ts){ const m=Math.round((Date.now()-ts)/60000); if(m<1) return "только что"; if(m<60) return m+" мин назад"; const h=Math.round(m/60); if(h<24) return h+" ч назад"; return Math.round(h/24)+" дн назад"; }
+function plural(n, a, b, c){ n=Math.abs(n)%100; const n1=n%10; if(n>10&&n<20) return c; if(n1>1&&n1<5) return b; if(n1===1) return a; return c; }
+function toast(msg){ const r=$("#toastRoot"); r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML="",3200); }
+function md(text){
+  const lines=esc(text).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split(/\n/);
+  let out="", inList=false;
+  for(const l of lines){
+    const m=l.match(/^\s*(?:[-•*]|\d+[.)])\s+(.*)/);
+    if(m){ if(!inList){out+="<ul>";inList=true;} out+="<li>"+m[1]+"</li>"; }
+    else { if(inList){out+="</ul>";inList=false;} if(l.trim()) out+="<p>"+l.replace(/^#+\s*/,"")+"</p>"; }
+  }
+  if(inList) out+="</ul>"; return out;
+}
+
+/* ============ static data ============ */
+const DISTRICTS = [
+  {id:"almaly", name:"Алмалинский", lat:43.255, lng:76.915},
+  {id:"medeu", name:"Медеуский", lat:43.245, lng:76.975},
+  {id:"bostan", name:"Бостандыкский", lat:43.212, lng:76.905},
+  {id:"auezov", name:"Ауэзовский", lat:43.230, lng:76.845},
+  {id:"zhetysu", name:"Жетысуский", lat:43.290, lng:76.940},
+  {id:"turksib", name:"Турксибский", lat:43.335, lng:76.975},
+  {id:"alatau", name:"Алатауский", lat:43.285, lng:76.830},
+  {id:"nauryz", name:"Наурызбайский", lat:43.195, lng:76.800},
+];
+const districtName = id => (DISTRICTS.find(d=>d.id===id)||{}).name || "";
+function nearestDistrict(lat,lng){ let best=DISTRICTS[0],bd=1e9; for(const d of DISTRICTS){ const dd=(d.lat-lat)**2+((d.lng-lng)*0.73)**2; if(dd<bd){bd=dd;best=d;} } return best; }
+const FACILITIES = [
+  {id:"recycle-bayzakov-73",kind:"recycling",title:"АлатауЭкоВтор · пункт приёма вторсырья",address:"ул. Байзакова, 73/1",district:"almaly",lat:43.2583321,lng:76.9104203,materials:["Бумага","Электроника","Пластик","Стекло","Бытовая техника","Алюминиевые банки"],source:"https://2gis.kz/almaty/firm/70000001077246422",sourceLabel:"2ГИС · АлатауЭкоВтор",checked:"26.10.2026"},
+  {id:"recycle-satpaev-22",kind:"recycling",title:"Приём пластиковых бутылок · КазНИТУ",address:"ул. Каныша Сатпаева, 22",district:"bostan",lat:43.2360197,lng:76.9202422,materials:["ПЭТ-бутылки"],source:"https://2gis.kz/almaty/search/%D0%BF%D1%83%D0%BD%D0%BA%D1%82%20%D0%BF%D1%80%D0%B8%D0%B5%D0%BC%D0%B0%20%D0%BF%D0%BB%D0%B0%D1%81%D1%82%D0%B8%D0%BA%D0%B0",sourceLabel:"2ГИС · поиск пунктов приёма пластика",checked:"26.10.2026"},
+  {id:"recycle-bekmakhanov-96",kind:"recycling",title:"Пункт приёма бумажных отходов",address:"ул. Бекмаханова, 96/7",district:"turksib",lat:43.3521682,lng:76.9786564,materials:["Бумажные отходы"],source:"https://2gis.kz/almaty/search/%D0%BF%D1%83%D0%BD%D0%BA%D1%82%20%D0%BF%D1%80%D0%B8%D0%B5%D0%BC%D0%B0%20%D0%BC%D0%B0%D0%BA%D1%83%D0%BB%D0%B0%D1%82%D1%83%D1%80%D1%8B%20%D0%91%D0%B5%D0%BA%D0%BC%D0%B0%D1%85%D0%B0%D0%BD%D0%BE%D0%B2%D0%B0",sourceLabel:"2ГИС · поиск пунктов приёма макулатуры",checked:"26.10.2026"},
+  {id:"bulky-esenberlin-155",kind:"bulky",title:"Контейнеры для крупногабаритного мусора",address:"ул. Есенберлина, 155а",district:"medeu",lat:43.2617454,lng:76.9739223,materials:["Крупногабаритные отходы"],source:"https://2gis.kz/almaty/search/%D0%BA%D0%BE%D0%BD%D1%82%D0%B5%D0%B9%D0%BD%D0%B5%D1%80%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D0%BA%D1%80%D1%83%D0%BF%D0%BD%D0%BE%D0%B3%D0%B0%D0%B1%D0%B0%D1%80%D0%B8%D1%82%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BC%D1%83%D1%81%D0%BE%D1%80%D0%B0",sourceLabel:"2ГИС · категория контейнеров КГО",checked:"26.10.2026"},
+  {id:"bulky-raimbek-233",kind:"bulky",title:"Контейнеры для крупногабаритного мусора",address:"пр. Райымбека, 233а",district:"zhetysu",lat:43.2659515,lng:76.9077167,materials:["Крупногабаритные отходы"],source:"https://2gis.kz/almaty/search/%D0%BA%D0%BE%D0%BD%D1%82%D0%B5%D0%B9%D0%BD%D0%B5%D1%80%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D0%BA%D1%80%D1%83%D0%BF%D0%BD%D0%BE%D0%B3%D0%B0%D0%B1%D0%B0%D1%80%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BC%D1%83%D1%81%D0%BE%D1%80%D0%B0",sourceLabel:"2ГИС · категория контейнеров КГО",checked:"26.10.2026"},
+];
+const VOLUNTEER_GROUPS = [
+  {id:"city",title:"Городские эко-волонтёры",description:"Субботники, уборка парков и берегов рек.",interests:["Субботники","Горы и реки"]},
+  {id:"sorting",title:"Сообщество сортировки",description:"Раздельный сбор, макулатура и переработка.",interests:["Сортировка","Апсайклинг"]},
+  {id:"green",title:"Зелёные дворы",description:"Озеленение и забота о городских пространствах.",interests:["Озеленение","Чистый воздух"]},
+];
+const RELATIONSHIPS = [
+  ["wife","Жена"],["husband","Муж"],["partner","Партнёр / пара"],
+  ["brother","Брат"],["sister","Сестра"],["parent","Родитель"],
+  ["child","Ребёнок"],["relative","Родственник"],["friend","Друг"],
+  ["colleague","Коллега"],["other","Другое"],
+];
+const relationshipName = id => RELATIONSHIPS.find(x=>x[0]===id)?.[1]||"Знакомый";
+
+const GROUPS = [
+  {id:"kid", t:"Дошкольник", d:"Вместе с родителем", icon:"baby", kid:true},
+  {id:"school", t:"Школьник", d:"1–11 класс", icon:"book", kid:true},
+  {id:"teen", t:"Студент / подросток", d:"Колледж, вуз", icon:"bolt", kid:true},
+  {id:"adult", t:"Взрослый", d:"Работа, бизнес", icon:"brief"},
+  {id:"senior", t:"Старшее поколение", d:"Пенсионеры, КСК", icon:"heart"},
+];
+const ROLES = {
+  kid:[["member","Участник с родителем",false]],
+  school:[["member","Ученик",false],["head","Староста класса",true]],
+  teen:[["member","Студент",false],["org","Волонтёр-организатор",true]],
+  adult:[["member","Сотрудник",false],["company","Представитель компании",true],["teacher","Учитель / директор школы",true],["eco","Эко-организация",true]],
+  senior:[["member","Житель",false],["ksk","Председатель КСК / совета дома",true]],
+};
+const INTERESTS = ["Сортировка","Субботники","Озеленение","Чистый воздух","Горы и реки","Животные","Велосипед","Наука","Апсайклинг"];
+const SPHERES = ["IT","Образование","Медицина","Финансы","Торговля","Строительство","Госслужба","Производство","Другое"];
+const REWARDS = [
+  {id:"r1", t:"Компот в школьной столовой", s:"Столовая-партнёр", cost:40},
+  {id:"r2", t:"Скидка 20% на кофе", s:"Кофейня-партнёр", cost:80},
+  {id:"r3", t:"Час велопроката", s:"Велопрокат-партнёр", cost:120},
+  {id:"r4", t:"Эко-шоппер «Таза Алматы»", s:"Мерч приложения", cost:150},
+  {id:"r5", t:"Билет в кино", s:"Кинотеатр-партнёр", cost:300},
+  {id:"r6", t:"Бесплатный проезд на автобусе", s:"Транспортный партнёр · пример", cost:200},
+];
+const PTS = {bottles:2, cans:2, plastic:2, paper:2, glass:2, packets:1, other:1, trashBags:10};
+const ITEM_LABELS = {bottles:"Пластиковые бутылки", cans:"Банки", plastic:"Другой пластик", paper:"Бумага и картон", glass:"Стекло", packets:"Пакеты, обёртки", other:"Прочее", trashBags:"Полные мешки"};
+const QUIZ_BANK = [
+  {question:"Сколько примерно разлагается пластиковая бутылка?", options:["1 год","10 лет","Около 450 лет","Неделю"], correct:2, fact:"По распространённым оценкам — сотни лет, около 450. Поэтому бутылки лучше сдавать в переработку."},
+  {question:"Сколько разлагается полиэтиленовый пакет?", options:["Месяц","От 100 лет и больше","5 дней","Он не разлагается совсем"], correct:1, fact:"Пакет распадается на микропластик за сотню лет и дольше. Многоразовая сумка спасает сотни пакетов в год."},
+  {question:"Сколько разлагается жевательная резинка?", options:["Около 20–25 лет","1 день","1000 лет","1 месяц"], correct:0, fact:"Жвачка содержит полимеры, поэтому на асфальте живёт десятилетиями. Выбрасывай её в урну, завернув в бумажку."},
+  {question:"Что разлагается быстрее всего?", options:["Стеклянная бутылка","Алюминиевая банка","Банановая кожура","Пакет"], correct:2, fact:"Банановая кожура — органика, она разлагается за недели. Стекло может пролежать тысячи лет."},
+  {question:"Почему зимой над Алматы часто висит смог?", options:["Из-за снега","Котловина между гор плохо проветривается, а выбросы копятся","Из-за реки","Из-за деревьев"], correct:1, fact:"Город лежит у подножия Заилийского Алатау: в безветренную погоду холодный воздух застаивается, и выбросы от ТЭЦ, печей и машин копятся над городом."},
+  {question:"Сколько разлагается окурок сигареты?", options:["1 час","До 10 лет и больше","Он сразу растворяется","1 неделю"], correct:1, fact:"Фильтр сделан из ацетата целлюлозы и годами отравляет почву и воду."},
+  {question:"Куда выбрасывать использованные батарейки?", options:["В обычную урну","В специальный бокс для сбора батареек","В реку","Закопать в землю"], correct:1, fact:"Одна батарейка может загрязнить много земли тяжёлыми металлами. Боксы для батареек есть в магазинах и школах."},
+  {question:"Какая река течёт через центр Алматы вдоль терренкура?", options:["Иртыш","Есентай (Весновка)","Урал","Сырдарья"], correct:1, fact:"Есентай берёт начало в горах, а вдоль неё идёт терренкур — любимое место прогулок, которое часто нуждается в уборке."},
+];
+const QUIZ_TOPICS = ["время разложения отходов","сортировка мусора","вода и реки Алматы","воздух и смог в Алматы","горы Заилийского Алатау","деревья и парки Алматы","животные и птицы гор","переработка пластика","экономия воды и энергии","апсайклинг"];
+
+/* ============ state ============ */
+const SIMPLE_VIEW_KEY="taza_simple_view_v1";
+const S = { db:null, user:null, sample:null, imgOK:false, uid:null, local:false,
+  pub:null, priv:null, reports:[], spots:[], events:[], battles:[], profiles:[],
+  tab:"home", mapFilter:"all", rankLeague:"class", aiTurns:[], petTurns:[], quiz:null, quizSeen:[], aiError:null,
+  simpleView:(()=>{ try{ return localStorage.getItem(SIMPLE_VIEW_KEY)==="true"; }catch(e){ console.warn("Simple view preference",e); return false; } })() };
+const isKid = () => !!(GROUPS.find(g=>g.id===S.pub?.group)||{}).kid;
+function applySeniorDefaultView(){
+  if(S.pub?.group!=="senior") return;
+  try{
+    if(localStorage.getItem(SIMPLE_VIEW_KEY)===null){
+      S.simpleView=true;
+      localStorage.setItem(SIMPLE_VIEW_KEY,"true");
+    }
+  }catch(e){
+    S.simpleView=true;
+    console.warn("Could not save the default simple view preference",e);
+  }
+}
+
+/* ============ storage layer (db capability, or local fallback) ============ */
+const LOCAL_KEY="taza_local_v1";
+let LOCAL = (()=>{ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY))||{} }catch{ return {} } })();
+const localSubs = {};
+function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(LOCAL)) }catch{} }
+function splitPath(p){ const i=p.lastIndexOf("/"); return [p.slice(0,i), p.slice(i+1)]; }
+function localList(col){ return Object.entries(LOCAL[col]||{}).map(([id,v])=>({id,...v})); }
+function localEmit(col){ (localSubs[col]||[]).forEach(cb=>cb(localList(col))); }
+const Store = {
+  sub(col, cb){
+    if(S.db) return S.db.collection(col).onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))), e=>console.warn("db",col,e&&e.code));
+    (localSubs[col] ||= []).push(cb); cb(localList(col));
+  },
+  async get(path){
+    if(S.db){ const s=await S.db.doc(path).get(); return s.exists ? {...s.data()} : null; }
+    const [c,id]=splitPath(path); const v=(LOCAL[c]||{})[id]; return v?JSON.parse(JSON.stringify(v)):null;
+  },
+  async set(path, data){
+    if(S.db) return S.db.doc(path).set(data);
+    const [c,id]=splitPath(path); (LOCAL[c] ||= {})[id]=data; saveLocal(); localEmit(c);
+  },
+  async update(path, patch){
+    if(S.db) return S.db.doc(path).update(patch);
+    const [c,id]=splitPath(path); (LOCAL[c] ||= {}); LOCAL[c][id]={...(LOCAL[c][id]||{}),...patch}; saveLocal(); localEmit(c);
+  },
+  async add(col, data){ const id=rid(); await this.set(col+"/"+id, data); return id; },
+};
+const privPath = () => "data/users/"+S.uid+"/me";
+
+async function saveMe(pub, priv){
+  try{
+    if(pub){ S.pub={...S.pub,...pub}; await Store.update("profiles/"+S.uid, pub); }
+    if(priv){ S.priv={...S.priv,...priv}; await Store.set(privPath(), S.priv); }
+  }catch(e){ toast("Не удалось сохранить: "+(e.code||"ошибка сети")); }
+  renderTop();
+}
+
+/* ============ AI helper (sample capability) ============ */
+function aiErrText(e){
+  const c=e&&e.code;
+  if(c==="not_granted") return "В Claude не выдан доступ к ИИ. Разрешите его в настройках приложения и попробуйте ещё раз.";
+  if(c==="rate_limited") return "ИИ получил слишком много запросов. Подождите минуту.";
+  if(c==="cancelled") return "Остановлено.";
+  if(c==="unavailable"||!S.sample) return "ИИ работает при открытии приложения внутри Claude. Откройте эту страницу в Claude и разрешите доступ к ИИ.";
+  return "ИИ не ответил. Попробуйте ещё раз.";
+}
+async function aiText(input, opts={}){ if(!S.sample) throw {code:"unavailable"}; return S.sample(input, opts); }
+async function aiJSON(input, opts={}){ if(!S.sample) throw {code:"unavailable"}; return S.sample.json(input, opts); }
+
+/* photo → small jpeg blob + thumbnail dataURL */
+function loadImg(file){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(file); const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=u; }); }
+async function processPhoto(file){
+  const im=await loadImg(file);
+  const draw=(max,q)=>{ const k=Math.min(1,max/Math.max(im.width,im.height)); const c=document.createElement("canvas"); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k); c.getContext("2d").drawImage(im,0,0,c.width,c.height); return c; };
+  const big=draw(1024); const blob=await new Promise(r=>big.toBlob(r,"image/jpeg",0.82));
+  const thumb=draw(360).toDataURL("image/jpeg",0.7);
+  return {blob, thumb};
+}
+
+const PROMPT_REPORT = `Ты — ИИ-модератор городского эко-приложения «Таза Алматы». Пользователь прислал фото как доказательство, что он СОБРАЛ мусор (на субботнике или на прогулке). Проверь фото и верни ТОЛЬКО JSON без пояснений:
+{"verdict":"ok"|"review"|"reject","confidence":число 0..1,"bottles":целое,"cans":целое,"plastic":целое,"paper":целое,"glass":целое,"packets":целое,"other":целое,"trashBags":целое,"summary":"одно короткое предложение по-русски, что на фото","reason":"если verdict не ok — почему, по-русски, коротко","flags":[]}
+Правила:
+- ok — на фото явно виден собранный мусор (мешки с мусором, собранные бутылки, кучка мусора в руках/у урны).
+- review — мусор есть, но неясно, собран ли он, или фото слишком плохое.
+- reject — мусора нет; это скриншот, рисунок или картинка из интернета; крупно лица людей; документы или личные данные.
+- Считай предметы консервативно, не завышай. bottles — пластиковые бутылки; plastic — другой пластик, не считай бутылки повторно. trashBags — число полных мешков; предметы внутри мешков отдельно не считай.
+- flags — из списка: "no_litter","screenshot_or_stock","faces","personal_data","blurry".`;
+
+const PROMPT_SPOT = `Ты — ИИ-модератор карты загрязнений приложения «Таза Алматы». Пользователь хочет отметить на карте место, где много мусора. Проверь фото и верни ТОЛЬКО JSON:
+{"verdict":"ok"|"review"|"reject","confidence":число 0..1,"severity":1..5,"kind":"бытовой мусор"|"пластик"|"строительный мусор"|"стихийная свалка"|"листва и ветки"|"другое","summary":"одно предложение по-русски, что видно","reason":"если не ok — почему","flags":[]}
+Правила безопасности (важно, метки видят дети):
+- ok — на фото явно видно загрязнение на улице, в парке, у реки, в горах.
+- reject, если мусора не видно, а снято укромное место (щель, корни дерева, камень, клумба, подъезд) — такие метки могут использовать не по назначению; добавь флаг "suspicious".
+- reject — скриншот, картинка из интернета, крупно лица людей, номера машин, документы.
+- severity: 1 — пара предметов, 3 — заметная куча, 5 — стихийная свалка.
+- flags из: "no_litter","suspicious","screenshot_or_stock","faces","personal_data","blurry".`;
+
+/* ============ boot ============ */
+async function setSampleCapability(sample){
+  S.sample=sample||null;
+  S.imgOK=false;
+  if(S.sample){
+    try{ const lim=await S.sample.limits(); S.imgOK=!!(lim&&lim.images); }
+    catch(e){ console.warn("Claude image capability",e); }
+  }
+  renderTop();
+  if(S.pub) renderCurrent();
+}
+async function boot(){
+  $("#splashLogo").innerHTML=LOGO; $("#topLogo").innerHTML=LOGO;
+  let db=null, user=null, sample=null;
+  if(window.claude && typeof window.claude.use==="function"){
+    const capability=name=>Promise.resolve()
+      .then(()=>window.claude.use(name))
+      .then(value=>({value}),error=>({error}));
+    const dbRequest=capability("db"), userRequest=capability("user"), sampleRequest=capability("sample");
+    const requests=Promise.all([dbRequest,userRequest,sampleRequest]);
+    const timedOut=Symbol("timeout");
+    const results=await Promise.race([requests,new Promise(resolve=>setTimeout(()=>resolve(timedOut),9000))]);
+    if(results===timedOut){
+      S.aiError="Claude capability startup timed out";
+      console.warn("Claude capabilities are taking longer than expected");
+      sampleRequest.then(async result=>{
+        if(result.error){ console.warn("Claude sample capability",result.error); return; }
+        await setSampleCapability(result.value);
+        S.aiError=null;
+      });
+    }else{
+      const [dbResult,userResult,sampleResult]=results;
+      if(dbResult.error) console.warn("Claude db capability",dbResult.error); else db=dbResult.value;
+      if(userResult.error) console.warn("Claude user capability",userResult.error); else user=userResult.value;
+      if(sampleResult.error){ S.aiError=sampleResult.error; console.warn("Claude sample capability",sampleResult.error); }
+      else sample=sampleResult.value;
+    }
+  }
+  S.db=db; S.user=user; S.local=!db;
+  if(sample) await setSampleCapability(sample);
+  try{ S.uid = user ? await user.id() : null; }catch{}
+  if(!S.uid){ try{ S.uid=localStorage.getItem("taza_uid"); }catch{} if(!S.uid){ S.uid="local-"+rid(); try{localStorage.setItem("taza_uid",S.uid)}catch{} } }
+  if(!S.db) S.local=true;
+  let pub=null, priv=null;
+  try{ pub=await Store.get("profiles/"+S.uid); priv=await Store.get(privPath()); }catch(e){ console.warn(e); }
+  $("#splash").hidden=true;
+  if(pub && pub.name){ S.pub=pub; S.priv=priv||{}; applySeniorDefaultView(); startApp(); }
+  else startOnboarding();
+}
+
+/* ============ onboarding ============ */
+const OB = { step:0, verified:false, group:null, data:{interests:[]} };
+function startOnboarding(){ $("#onboard").hidden=false; renderOB(); }
+function obSteps(n){ return `<div class="steps">${[0,1,2].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`; }
+function heroArt(){
+  return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="400" height="300" fill="var(--sky)"/>
+  <circle cx="318" cy="64" r="26" fill="var(--sun)"/>
+  <path d="M0 170 L60 95 L95 130 L150 55 L205 120 L250 80 L300 135 L345 90 L400 140 V300 H0Z" fill="color-mix(in srgb,var(--forest) 55%,var(--sky))"/>
+  <path d="M150 55 L168 78 L158 76 L150 86 L141 75 L133 78Z M345 90 L360 108 L345 104 L333 110Z M60 95 L74 112 L62 110 L50 113Z" fill="var(--surface)"/>
+  <path d="M0 205 C80 180 160 215 240 195 S360 185 400 200 V300 H0Z" fill="var(--leaf)"/>
+  <g fill="var(--surface)" opacity=".95"><rect x="40" y="185" width="22" height="40" rx="3"/><rect x="68" y="170" width="18" height="55" rx="3"/><rect x="92" y="190" width="26" height="35" rx="3"/><rect x="250" y="178" width="20" height="50" rx="3"/><rect x="276" y="165" width="16" height="62" rx="3"/><rect x="298" y="188" width="28" height="40" rx="3"/></g>
+  <path d="M0 240 C90 225 170 250 260 236 S370 228 400 238 V300 H0Z" fill="var(--forest)"/>
+  <g transform="translate(176 196)"><ellipse cx="24" cy="54" rx="26" ry="6" fill="#000" opacity=".12"/><path d="M24 4c-14 0-22 14-22 28s10 22 22 22 22-8 22-22S38 4 24 4z" fill="var(--sun)"/><path d="M24 6c-2-10 6-16 14-14-1 9-8 14-14 14z" fill="var(--leaf)"/><circle cx="16" cy="30" r="3.4" fill="#1b2a1f"/><circle cx="32" cy="30" r="3.4" fill="#1b2a1f"/><path d="M18 39c4 4 8 4 12 0" stroke="#1b2a1f" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>
+</svg>`;
+}
+function renderOB(){
+  const el=$("#onboard");
+  if(OB.step===0){
+    el.innerHTML=`<div class="wrap ob">
+      <div class="logo">${LOGO}</div>
+      <div class="stack-16">
+        <div class="ob-art">${heroArt()}</div>
+        <h1>Сделаем Алматы чище — вместе и с ИИ</h1>
+        <p class="muted">Субботники, карта загрязнений, соревнования классов и компаний, бонусы от партнёров и эко-питомец. Вход только через eGov, чтобы каждый участник был настоящим.</p>
+        <div class="egov" id="egovBox">
+          <div class="row"><div class="verify-icon">${I.shield}</div>
+          <div><b>Вход через eGov</b><p class="small muted">Демо-режим прототипа: личность подтверждается симуляцией, данные не запрашиваются.</p></div></div>
+          <div id="egovSteps" class="small stack-8"></div>
+          <button class="btn primary block" id="egovBtn" type="button">${I.shield} Подтвердить личность через eGov</button>
+        </div>
+      </div><div></div></div>`;
+    $("#egovBtn").onclick=runEgov;
+  } else if(OB.step===1){
+    el.innerHTML=`<div class="wrap ob">
+      <div class="stack-12">${obSteps(1)}<p class="eyebrow">Шаг 2 из 3</p><h1>Кто вы?</h1><p class="muted">От этого зависит, что будет в приложении: у детей — эко-питомец, у взрослых — лига компаний.</p></div>
+      <div class="stack-10">${GROUPS.map(g=>`<button type="button" class="opt" data-g="${g.id}" aria-pressed="${OB.group===g.id}"><span class="oi">${I[g.icon]}</span><span><b>${g.t}</b><br><span class="small muted">${g.d}</span></span></button>`).join("")}</div>
+      <button class="btn primary block" id="obNext" type="button" ${OB.group?"":"disabled"}>Дальше</button></div>`;
+    el.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{ OB.group=b.dataset.g; OB.data.role=ROLES[OB.group][0][0]; renderOB(); });
+    $("#obNext").onclick=()=>{ OB.step=2; renderOB(); };
+  } else {
+    const g=OB.group, d=OB.data;
+    const schoolish = g==="school"||g==="teen";
+    el.innerHTML=`<div class="wrap ob">
+      <div class="stack-12">${obSteps(2)}<p class="eyebrow">Шаг 3 из 3</p><h1>Расскажите о себе</h1></div>
+      <form id="obForm" class="form-stack" novalidate>
+        <label class="f">Имя<input type="text" id="f-name" maxlength="30" placeholder="${g==="kid"?"Имя ребёнка":"Как к вам обращаться"}" value="${esc(d.name||"")}" required></label>
+        ${g==="kid"?`<label class="f">Детский сад или школа рядом (необязательно)<input type="text" id="f-org" maxlength="60" placeholder="Детсад №…" value="${esc(d.org||"")}"></label>`:""}
+        ${schoolish?`<div class="grid2"><label class="f">${g==="school"?"Школа":"Учебное заведение"}<input type="text" id="f-org" maxlength="60" placeholder="${g==="school"?"Школа-лицей №…":"Колледж / вуз"}" value="${esc(d.org||"")}"></label>
+          <label class="f">${g==="school"?"Класс":"Группа"}<input type="text" id="f-unit" maxlength="12" placeholder="${g==="school"?"7 «Б»":"ИТ-21"}" value="${esc(d.unit||"")}"></label></div>`:""}
+        ${g==="adult"?`<label class="f">Компания<input type="text" id="f-org" maxlength="60" placeholder="Где вы работаете" value="${esc(d.org||"")}"></label>
+          <label class="f">Сфера<select id="f-sphere">${SPHERES.map(s=>`<option ${d.sphere===s?"selected":""}>${s}</option>`).join("")}</select></label>`:""}
+        ${g==="senior"?`<label class="f">Сфера или сообщество (необязательно)<input type="text" id="f-org" maxlength="60" placeholder="КСК, совет ветеранов…" value="${esc(d.org||"")}"></label>`:""}
+        <label class="f">Район<select id="f-district">${DISTRICTS.map(x=>`<option value="${x.id}" ${d.district===x.id?"selected":""}>${x.name}</option>`).join("")}</select></label>
+        <label class="f">Роль<select id="f-role">${ROLES[g].map(([id,t,tr])=>`<option value="${id}" ${d.role===id?"selected":""}>${t}${tr?" — проверенный организатор":""}</option>`).join("")}</select></label>
+        <div class="stack-8"><span class="interest-label">Интересы</span><div class="chips">${INTERESTS.map(t=>`<button type="button" class="chip" data-i="${t}" aria-pressed="${d.interests.includes(t)}">${t}</button>`).join("")}</div></div>
+        <label class="f">Пара слов о себе (видите только вы и ИИ)<textarea id="f-about" maxlength="300" placeholder="Например: люблю горы, хочу чистый терренкур">${esc(d.about||"")}</textarea></label>
+        <p class="small muted" id="obErr" role="alert"></p>
+        <button class="btn primary block" type="submit">Готово</button>
+        <button class="btn ghost block" type="button" id="obBack">Назад</button>
+      </form><div></div></div>`;
+    el.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ const t=b.dataset.i; const on=d.interests.includes(t); d.interests = on? d.interests.filter(x=>x!==t) : [...d.interests,t]; b.setAttribute("aria-pressed",String(!on)); });
+    $("#obBack").onclick=()=>{ OB.step=1; renderOB(); };
+    $("#obForm").onsubmit=async ev=>{
+      ev.preventDefault();
+      const v=id=>{ const e=$("#"+id); return e?e.value.trim():""; };
+      Object.assign(d,{name:v("f-name"),org:v("f-org"),unit:v("f-unit"),sphere:v("f-sphere"),district:v("f-district"),role:v("f-role"),about:v("f-about")});
+      if(!d.name){ $("#obErr").textContent="Введите имя."; return; }
+      if(g==="school" && (!d.org||!d.unit)){ $("#obErr").textContent="Укажите школу и класс — так ваш класс попадёт в лигу классов."; return; }
+      await finishOnboarding();
+    };
+  }
+}
+function runEgov(){
+  const btn=$("#egovBtn"), box=$("#egovSteps"); btn.disabled=true;
+  const steps=["Соединение с eGov (демо)","Подтверждение личности","Проверка возраста для детского режима"];
+  let i=0; const tick=()=>{
+    box.innerHTML=steps.map((s,k)=>`<div class="row">${k<i?`<span class="check">${I.check}</span>`:k===i?`<span class="spin"></span>`:`<span class="step-placeholder"></span>`}<span>${s}</span></div>`).join("");
+    if(i<steps.length){ i++; setTimeout(tick,650); } else { OB.verified=true; btn.innerHTML=`${I.check} Личность подтверждена`; setTimeout(()=>{OB.step=1;renderOB();},500); }
+  }; tick();
+}
+function teamOf(p){
+  if((p.group==="school"||p.group==="teen") && p.org) return {league:"class", team:p.org+(p.unit?" · "+p.unit:"")};
+  if(p.group==="adult" && p.org) return {league:"company", team:p.org};
+  return {league:null, team:null};
+}
+async function finishOnboarding(){
+  const d=OB.data, g=OB.group;
+  const trusted = !!(ROLES[g].find(r=>r[0]===d.role)||[])[2];
+  const {league,team}=teamOf({group:g,...d});
+  const pub={ name:d.name, group:g, org:d.org||"", unit:d.unit||"", sphere:d.sphere||"", district:d.district, role:d.role, roleTitle:(ROLES[g].find(r=>r[0]===d.role)||[])[1], trusted, league, team, points:0, items:0, egov:true, createdAt:Date.now() };
+  const priv={ about:d.about||"", interests:d.interests, spent:0, rewards:[], pet:{food:70, mood:70, xp:0, ts:Date.now(), name:"Жасыл"} };
+  try{ await Store.set("profiles/"+S.uid, pub); await Store.set(privPath(), priv); }
+  catch(e){ $("#obErr").textContent="Не удалось сохранить профиль ("+(e.code||"ошибка")+"). Проверьте, что вы вошли в Claude, и попробуйте снова."; return; }
+  S.pub=pub; S.priv=priv; applySeniorDefaultView(); $("#onboard").hidden=true; startApp();
+  toast("Добро пожаловать, "+d.name+"!");
+}
+
+/* ============ app shell ============ */
+function startApp(){
+  $("#app").hidden=false;
+  applySimpleView();
+  $("#simpleViewToggle").onclick=toggleSimpleView;
+  $("#fab").innerHTML=I.spark; $("#fab").onclick=()=>openAssistant();
+  $("#pointsPill").onclick=()=>{ go("rank"); setTimeout(()=>$("#rewards")?.scrollIntoView({behavior:"smooth"}),50); };
+  renderTabs(); renderTop();
+  const rerender=()=>renderCurrent();
+  Store.sub("reports", l=>{ S.reports=l; rerender(); });
+  Store.sub("spots", l=>{ S.spots=l; rerender(); MAP.sync(); });
+  Store.sub("events", l=>{ S.events=l; rerender(); MAP.sync(); });
+  Store.sub("battles", l=>{ S.battles=l; rerender(); });
+  Store.sub("profiles", l=>{ S.profiles=l; const me=l.find(p=>p.id===S.uid); if(me){ S.pub={...me}; delete S.pub.id; renderTop(); } rerender(); });
+  const h=(location.hash||"").slice(1); go(["home","map","events","rank","pet","ai"].includes(h)?h:"home");
+}
+function tabList(){
+  if(S.simpleView) return [["home","Главная","home"],["map","Карта","map"],["events","Субботники","cal"]];
+  return [["home","Главная","home"],["map","Карта","map"],["events","Субботники","cal"],["rank","Рейтинг","trophy"], isKid()?["pet","Питомец","leaf"]:["ai","ИИ","spark"]];
+}
+function renderTabs(){ $("#tabs").innerHTML=tabList().map(([id,t,ic])=>`<button class="tab" type="button" data-tab="${id}" aria-selected="${S.tab===id}">${I[ic]}<span>${t}</span></button>`).join(""); $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
+function applySimpleView(){
+  document.body.classList.toggle("simple-view",S.simpleView);
+  const button=$("#simpleViewToggle");
+  if(button){
+    button.textContent=S.simpleView?"Обычный вид":"Крупный текст";
+    button.setAttribute("aria-pressed",String(S.simpleView));
+    button.setAttribute("aria-label",S.simpleView?"Выключить простой режим":"Включить простой режим: крупный текст и меньше разделов");
+  }
+}
+function toggleSimpleView(){
+  S.simpleView=!S.simpleView;
+  try{ localStorage.setItem(SIMPLE_VIEW_KEY,String(S.simpleView)); }
+  catch(e){ console.warn("Could not save simple view preference",e); toast("Настройка действует только до закрытия страницы"); }
+  applySimpleView();
+  if(S.simpleView&&!["home","map","events"].includes(S.tab)){ go("home"); return; }
+  renderTabs();
+  renderCurrent();
+  $("#fab").hidden=S.simpleView||S.tab==="ai";
+  MAP.setActive(S.tab==="map");
+}
+function balance(){ return (S.pub?.points||0)-(S.priv?.spent||0); }
+function renderTop(){
+  $("#pointsPill").innerHTML=`${I.coin}<span class="num">${balance()}</span>`;
+  $("#modeBadge").innerHTML=`${S.local?`<span class="offline" title="Нет общей базы — данные только на этом устройстве">Офлайн</span>`:""}<span class="ai-status ${S.sample?"ready":""}" title="${S.sample?"ИИ подключён через Claude":"ИИ доступен при открытии приложения в Claude"}">${S.sample?"ИИ Claude":"ИИ: Claude"}</span>`;
+}
+function go(tab){
+  if(S.simpleView&&!["home","map","events"].includes(tab)) tab="home";
+  const previousTab=S.tab, changed=previousTab!==tab;
+  const tabs=tabList().map(([id])=>id);
+  const direction=tabs.indexOf(tab)>=tabs.indexOf(previousTab)?"next":"previous";
+  S.tab=tab; document.querySelectorAll(".screen").forEach(s=>s.hidden = s.id!=="s-"+tab);
+  renderTabs(); renderCurrent();
+  const screen=$("#s-"+tab);
+  const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(changed&&screen&&!reduceMotion){
+    screen.classList.remove("screen-enter-next","screen-enter-previous");
+    void screen.offsetWidth;
+    screen.classList.add("screen-enter-"+direction);
+    screen.addEventListener("animationend",event=>{
+      if(event.target===screen) screen.classList.remove("screen-enter-next","screen-enter-previous");
+    },{once:true});
+  }
+  window.scrollTo({top:0,behavior:changed&&!reduceMotion?"smooth":"auto"});
+  $("#fab").hidden = S.simpleView||tab==="ai";
+  MAP.setActive(tab==="map");
+}
+function renderCurrent(){
+  if(!S.pub) return;
+  ({home:renderHome,map:renderMapScreen,events:renderEvents,rank:renderRank,pet:renderPet,ai:renderAIScreen})[S.tab]?.();
+}
+
+/* ============ sheet ============ */
+function openSheet(html, onMount){
+  const root=$("#sheetRoot");
+  root.innerHTML=`<div class="scrim" id="scrim"><div class="sheet wrap" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;
+  $("#scrim").addEventListener("click",e=>{ if(e.target.id==="scrim") closeSheet(); });
+  root.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+  document.body.style.overflow="hidden";
+  onMount && onMount(root.querySelector(".sheet"));
+}
+function closeSheet(){ $("#sheetRoot").innerHTML=""; document.body.style.overflow=""; sheetAbort?.abort(); }
+let sheetAbort=null;
+const sheetHead = t => `<div class="sheet-h"><h2>${t}</h2><button class="x" type="button" data-close aria-label="Закрыть">${I.x}</button></div>`;
+
+/* ============ derived ============ */
+const okReports = () => S.reports.filter(r=>r.status==="ok");
+function upcomingEvents(){ const now=Date.now()-6*3600e3; return S.events.filter(e=>new Date(e.date).getTime()>=now).sort((a,b)=>new Date(a.date)-new Date(b.date)); }
+function spotPriority(s){ return (s.confirms?.length||0) + (s.severity||2) + (s.trusted?2:0); }
+function visibleSpots(){ return S.spots.filter(s=>s.status!=="cleaned" && s.status!=="rejected").sort((a,b)=>spotPriority(b)-spotPriority(a)); }
+function spotState(s){
+  if(s.status==="cleaned") return ["Убрано","b-ok"];
+  if(s.status==="active") return ["Подтверждено","b-bad"];
+  return ["На проверке","b-warn"];
+}
+function petNow(){
+  const p=S.priv?.pet||{food:70,mood:70,xp:0,ts:Date.now()};
+  const h=(Date.now()-(p.ts||Date.now()))/3600e3;
+  return {...p, food:clamp(Math.round(p.food-h*2),0,100), mood:clamp(Math.round(p.mood-h*1),0,100)};
+}
+const STAGES=[[0,"Семечко"],[30,"Росток"],[100,"Саженец"],[250,"Деревце"],[500,"Цветущая яблоня-апорт"]];
+function petStage(xp){ let s=0; STAGES.forEach((st,i)=>{ if(xp>=st[0]) s=i; }); return s; }
+
+/* ============ HOME ============ */
+function renderHome(){
+  const p=S.pub, mine=S.reports.filter(r=>r.uid===S.uid);
+  const ev=upcomingEvents().slice(0,2), spots=visibleSpots().slice(0,3);
+  const pet=petNow();
+  $("#s-home").innerHTML=`
+    <div class="home-intro"><p class="eyebrow">${esc(districtName(p.district))} район</p>
+      <h1>Сәлем, ${esc(p.name)}!</h1>
+      <div class="row wrap-ok"><span class="badge b-ok">${I.shield} eGov</span>${p.trusted?`<span class="badge b-warn">${I.check} ${esc(p.roleTitle)}</span>`:`<span class="badge b-plain">${esc(p.roleTitle||"")}</span>`}${p.team?`<span class="badge b-plain">${esc(p.team)}</span>`:""}</div></div>
+    <button class="hero-act" type="button" id="hReport"><span class="ico">${I.cam}</span><span><b>Я собрал мусор</b><span class="small">Сфотографируй — ИИ проверит и начислит эко-баллы</span></span></button>
+    <div class="card secondary-feature"><div class="grid2">
+      <div class="stat"><span class="eyebrow">Эко-баллы</span><b>${balance()}</b></div>
+      <div class="stat"><span class="eyebrow">Собрано предметов</span><b>${p.items||0}</b></div></div>
+      <p class="small muted">${mine.length?`${mine.length} ${plural(mine.length,"отчёт","отчёта","отчётов")}, последний ${ago(Math.max(...mine.map(r=>r.at)))}`:"Пока нет отчётов — первый принесёт баллы и накормит питомца."}</p></div>
+    ${isKid()?`<button class="card pet-card secondary-feature" type="button" id="hPet">
+      ${petSVG(petStage(pet.xp),pet.food,pet.mood,76)}
+      <div class="pet-details"><b>${esc(pet.name||"Жасыл")} · ${STAGES[petStage(pet.xp)][1]}</b>
+      <div class="bar" aria-label="Сытость"><i class="fill-leaf" data-percent="${pet.food}"></i></div>
+      <span class="small muted">${pet.food<35?"Проголодался! Собери немного мусора.":"Ждёт твой вопрос дня"}</span></div></button>`:
+    `<div class="card secondary-feature"><div class="row between"><span class="ai-tag">${I.spark} План от ИИ</span></div>
+      <div id="planOut" class="md small">${S.priv?.plan?md(S.priv.plan):'<span class="muted">ИИ составит три шага на эту неделю по вашим интересам, району и команде.</span>'}</div>
+      <button class="btn sm" type="button" id="planBtn">${I.spark} ${S.priv?.plan?"Обновить план":"Составить план"}</button></div>`}
+    <div class="card"><div class="row between"><h2>Ближайшие субботники</h2><button class="linkbtn" type="button" data-go="events">Все</button></div>
+      ${ev.length?ev.map(eventItem).join(""):emptyBox(I.cal,"Субботников пока нет","Проверенные организаторы могут создать первый.")}</div>
+    <div class="card"><div class="row between"><h2>Горячие точки</h2><button class="linkbtn" type="button" data-go="map">Карта</button></div>
+      ${spots.length?spots.map(spotItem).join(""):emptyBox(I.pin,"На карте пока чисто","Увидели мусор? Отметьте точку с фото.")}</div>
+    <button class="card flat safety-card" type="button" id="hSafe"><span class="safety-icon">${I.shield.replace("<svg","<svg width=28 height=28")}</span><span><b>Как мы защищаем пользователей</b><br><span class="small muted">eGov, фото-проверка ИИ, доверенные организаторы</span></span></button>`;
+  applyPercentValues($("#s-home"));
+  bindCommon($("#s-home"));
+  $("#hReport").onclick=openReport;
+  $("#hPet") && ($("#hPet").onclick=()=>go("pet"));
+  $("#planBtn") && ($("#planBtn").onclick=makePlan);
+  $("#hSafe").onclick=openSafety;
+}
+function emptyBox(icon,t,d){ return `<div class="empty">${icon}<b>${t}</b><span class="small">${d}</span></div>`; }
+function eventItem(e){
+  const d=new Date(e.date), n=e.members?.length||0, joined=e.members?.includes(S.uid);
+  return `<button class="item" type="button" data-event="${e.id}"><span class="datebox"><b>${d.getDate()}</b><span>${MONTHS[d.getMonth()]}</span></span>
+    <span class="min-width-0"><span class="t">${esc(e.title)}</span><br><span class="small muted">${esc(districtName(e.district))} · ${esc(e.place||"")} · ${n} ${plural(n,"участник","участника","участников")}</span></span>
+    ${joined?`<span class="badge b-ok">Иду</span>`:`<span class="badge b-plain">${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}</span>`}</button>`;
+}
+function spotItem(s){
+  const [st,cls]=spotState(s), c=s.confirms?.length||0;
+  return `<button class="item" type="button" data-spot="${s.id}">${s.photo?`<img class="thumb" src="${s.photo}" alt="">`:`<span class="thumb">${I.pin}</span>`}
+    <span class="min-width-0"><span class="t">${esc(s.title||s.kind||"Загрязнение")}</span><br><span class="small muted">${esc(districtName(s.district))} · ${c} ${plural(c,"подтверждение","подтверждения","подтверждений")}</span></span>
+    <span class="badge ${cls}">${st}</span></button>`;
+}
+function facilityItem(f){
+  const recycling=f.kind==="recycling";
+  const label=recycling?"Пункт приёма":"Крупный контейнер";
+  return `<button class="item" type="button" data-facility="${f.id}"><span class="thumb facility-icon ${recycling?"recycling":"bulky"}">${recycling?I.leaf:I.brief}</span>
+    <span class="min-width-0"><span class="t">${esc(f.title)}</span><br><span class="small muted">${esc(f.address)} · ${esc(districtName(f.district))} район${recycling?" · "+esc(f.materials.join(", ")):""}</span></span>
+    <span class="badge b-plain">${label}</span></button>`;
+}
+function bindCommon(root){
+  root.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
+  root.querySelectorAll("[data-event]").forEach(b=>b.onclick=()=>openEvent(b.dataset.event));
+  root.querySelectorAll("[data-spot]").forEach(b=>b.onclick=()=>openSpot(b.dataset.spot));
+  root.querySelectorAll("[data-facility]").forEach(b=>b.onclick=()=>openFacility(b.dataset.facility));
+}
+function openFacility(id){
+  const f=FACILITIES.find(x=>x.id===id); if(!f) return;
+  const recycling=f.kind==="recycling";
+  openSheet(`${sheetHead(esc(f.title))}
+    <div class="row wrap-ok"><span class="badge b-plain">${esc(districtName(f.district))} район</span><span class="badge ${recycling?"b-ok":"b-warn"}">${recycling?"Пункт приёма":"Крупногабаритный контейнер"}</span></div>
+    <div class="card flat"><b>Адрес из каталога</b><span class="small">${esc(f.address)}</span>${recycling?`<b>Принимают</b><span class="small">${f.materials.map(esc).join(" · ")}</span>`:""}</div>
+    <div class="ai-box warn"><b>Проверьте перед поездкой</b><span class="small">Карточка найдена в каталоге 2ГИС; координаты адреса сверены с OpenStreetMap. Расположение, часы работы, доступность приёма и доступ к контейнеру могут измениться. Уточните у оператора.</span><span class="small muted">Источники проверены ${esc(f.checked)}.</span></div>
+    <div class="row wrap-ok"><a class="btn primary" href="https://2gis.kz/almaty/search/${encodeURIComponent(f.address)}" target="_blank" rel="noopener noreferrer">Открыть адрес в 2ГИС</a><a class="btn" href="${esc(f.source)}" target="_blank" rel="noopener noreferrer">${esc(f.sourceLabel)}</a><a class="btn" href="https://www.openstreetmap.org/?mlat=${f.lat}&mlon=${f.lng}#map=18/${f.lat}/${f.lng}" target="_blank" rel="noopener noreferrer">Координаты в OpenStreetMap</a></div>
+    <span class="small muted num">Координаты адреса: ${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</span>`);
+}
+async function makePlan(){
+  const btn=$("#planBtn"), out=$("#planOut"); btn.disabled=true; out.textContent="ИИ думает…";
+  const p=S.pub;
+  const prompt=`Ты — ИИ-ассистент приложения «Таза Алматы». Составь личный эко-план на неделю для пользователя. Ответь по-русски: ровно 3 пункта списком "- ", каждый — одно конкретное действие (до 20 слов). Не выдумывай адреса и телефоны.
+Профиль: группа ${p.group}, район ${districtName(p.district)}, роль ${p.roleTitle}, команда ${p.team||"нет"}, интересы: ${(S.priv.interests||[]).join(", ")||"не указаны"}, о себе: ${S.priv.about||"—"}.
+Ближайшие субботники: ${upcomingEvents().slice(0,3).map(e=>e.title+" ("+districtName(e.district)+", "+fmtDate(e.date)+")").join("; ")||"нет"}.
+Горячие точки: ${visibleSpots().slice(0,3).map(s=>(s.title||s.kind)+" — "+districtName(s.district)).join("; ")||"нет"}.`;
+  try{ const {text}=await aiText(prompt,{onText:({text})=>{out.innerHTML=md(text);}}); out.innerHTML=md(text); await saveMe(null,{plan:text}); }
+  catch(e){ out.textContent=aiErrText(e); }
+  btn.disabled=false;
+}
+
+/* ============ REPORT (photo → AI check → points) ============ */
+function openReport(prefEvent){
+  const R={blob:null,thumb:null,ai:null,counts:{bottles:0,cans:0,plastic:0,paper:0,glass:0,packets:0,other:0,trashBags:0},event:prefEvent||""};
+  const myEvents=S.events.filter(e=>e.members?.includes(S.uid));
+  openSheet(`${sheetHead("Я собрал мусор")}
+    <p class="muted small">Сфотографируй собранный мусор целиком (мешки, бутылки). Лица и документы в кадр не нужны.</p>
+    <label class="photo-drop" id="rDrop">${I.cam}<b>Сделать или выбрать фото</b><span class="small muted">JPG или PNG</span><input type="file" id="rFile" accept="image/*" capture="environment" hidden></label>
+    <div id="rAI"></div>
+    <div id="rCounts" hidden class="card gap-6"><h3>Сколько собрано</h3><div id="rSteps" class="stack-6"></div><p class="small muted" id="rPts"></p></div>
+    ${myEvents.length?`<label class="f">Это было на субботнике? (+10 баллов)<select id="rEvent"><option value="">Нет, сам(а)</option>${myEvents.map(e=>`<option value="${e.id}" ${R.event===e.id?"selected":""}>${esc(e.title)}</option>`).join("")}</select></label>`:""}
+    <button class="btn primary block" id="rSubmit" type="button" disabled>Отправить отчёт</button>`, sheet=>{
+    const file=$("#rFile",sheet);
+    file.onchange=async()=>{
+      const f=file.files[0]; if(!f) return;
+      try{ const {blob,thumb}=await processPhoto(f); R.blob=blob; R.thumb=thumb; }catch{ toast("Не удалось открыть фото"); return; }
+      $("#rDrop",sheet).innerHTML=`<img src="${R.thumb}" alt="Ваше фото"><span class="small muted">Нажмите, чтобы заменить</span>`; $("#rDrop",sheet).appendChild(file);
+      checkReport(sheet,R);
+    };
+    $("#rEvent",sheet)?.addEventListener("change",e=>{R.event=e.target.value; updPts(sheet,R);});
+    $("#rSubmit",sheet).onclick=()=>submitReport(R);
+  });
+}
+async function checkReport(sheet,R){
+  const box=$("#rAI",sheet);
+  if(!S.sample || !S.imgOK){
+    R.ai={verdict:"review",summary:"ИИ-проверка недоступна в этом просмотре",reason:"Отчёт уйдёт на ручную проверку; баллы начислятся после неё."};
+    renderAIResult(box,R.ai,"report"); showCounts(sheet,R); return;
+  }
+  box.innerHTML=`<div class="ai-box"><span class="ai-tag">${I.spark} ИИ проверяет фото</span><div class="row"><span class="spin"></span><span class="small">Ищем мусор и считаем предметы…</span></div></div>`;
+  sheetAbort=new AbortController();
+  try{
+    const res=await aiJSON(PROMPT_REPORT,{images:[R.blob],signal:sheetAbort.signal,cache:false});
+    R.ai=res||{verdict:"review"};
+    for(const k of Object.keys(R.counts)) R.counts[k]=clamp(parseInt(res?.[k])||0,0,500);
+  }catch(e){
+    if(e.code==="cancelled") return;
+    R.ai={verdict:"review",summary:"ИИ не смог проверить фото",reason:aiErrText(e)+" Отчёт уйдёт на ручную проверку."};
+  }
+  renderAIResult(box,R.ai,"report"); showCounts(sheet,R);
+}
+function renderAIResult(box,ai,kind){
+  const v=ai.verdict, cls=v==="ok"?"ok":v==="reject"?"bad":"warn";
+  const title= v==="ok" ? (kind==="report"?"Фото подтверждено":"Загрязнение подтверждено") : v==="reject" ? "Фото отклонено" : "Нужна проверка человеком";
+  box.innerHTML=`<div class="ai-box ${cls}"><span class="ai-tag">${I.spark} ИИ-проверка${ai.confidence!=null?` · уверенность ${Math.round(ai.confidence*100)}%`:""}</span>
+    <b>${title}</b>${ai.summary?`<p class="small">${esc(ai.summary)}</p>`:""}${v!=="ok"&&ai.reason?`<p class="small">${esc(ai.reason)}</p>`:""}
+    ${kind==="spot"&&ai.kind?`<div class="row wrap-ok"><span class="badge b-plain">${esc(ai.kind)}</span><span class="badge b-plain">Серьёзность ${clamp(+ai.severity||2,1,5)}/5</span></div>`:""}</div>`;
+}
+function showCounts(sheet,R){
+  if(R.ai.verdict==="reject"){ $("#rCounts",sheet).hidden=true; $("#rSubmit",sheet).disabled=true; return; }
+  $("#rCounts",sheet).hidden=false;
+  const wrap=$("#rSteps",sheet);
+  wrap.innerHTML=Object.keys(R.counts).map(k=>`<div class="stepper"><span>${ITEM_LABELS[k]}</span><button type="button" data-k="${k}" data-d="-1" aria-label="Меньше">−</button><b id="c-${k}">${R.counts[k]}</b><button type="button" data-k="${k}" data-d="1" aria-label="Больше">+</button></div>`).join("");
+  wrap.querySelectorAll("button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; R.counts[k]=clamp(R.counts[k]+(+b.dataset.d),0,500); $("#c-"+k,sheet).textContent=R.counts[k]; R.edited=true; updPts(sheet,R); });
+  updPts(sheet,R);
+}
+function calcPts(R){ let p=0; for(const k in R.counts) p+=R.counts[k]*PTS[k]; if(R.event) p+=10; return p; }
+function calcItems(c){ return Object.entries(c).reduce((total,[kind,count])=>total+(kind==="trashBags"?count*10:count),0); }
+function updPts(sheet,R){
+  const p=calcPts(R), items=calcItems(R.counts);
+  $("#rPts",sheet).innerHTML = R.ai.verdict==="ok" ? `Будет начислено <b>${p}</b> ${plural(p,"балл","балла","баллов")} · ${items} ${plural(items,"предмет","предмета","предметов")}${R.edited?" · вы изменили подсчёт ИИ, отчёт отметится":""}` : `Отчёт уйдёт на проверку, баллы — после неё.`;
+  $("#rSubmit",sheet).disabled = items===0;
+}
+async function submitReport(R){
+  const btn=$("#rSubmit"); btn.disabled=true;
+  const status=R.ai.verdict==="ok"?"ok":"review";
+  const pts=status==="ok"?calcPts(R):0, items=calcItems(R.counts);
+  const rep={uid:S.uid,name:S.pub.name,team:S.pub.team||null,league:S.pub.league||null,school:S.pub.group==="school"?S.pub.org:null,district:S.pub.district,counts:R.counts,items,points:pts,status,edited:!!R.edited,ai:{verdict:R.ai.verdict,summary:R.ai.summary||"",confidence:R.ai.confidence??null},photo:R.thumb,event:R.event||null,at:Date.now(),day:dayKey()};
+  try{
+    await Store.add("reports",rep);
+    const pet=petNow();
+    const fed={...pet, food:clamp(pet.food+Math.max(10,items*3),0,100), mood:clamp(pet.mood+10,0,100), xp:pet.xp+Math.min(60,items), ts:Date.now()};
+    await saveMe(status==="ok"?{points:(S.pub.points||0)+pts, items:(S.pub.items||0)+items}:null, {pet:fed});
+    closeSheet();
+    toast(status==="ok"?`+${pts} ${plural(pts,"балл","балла","баллов")}! ${isKid()?"Жасыл сыт и счастлив.":"Спасибо за чистый город."}`:"Отчёт отправлен на проверку");
+    renderCurrent();
+  }catch(e){ btn.disabled=false; toast("Не удалось отправить: "+(e.code||"ошибка")); }
+}
+
+/* ============ SAFETY ============ */
+function openSafety(){
+  openSheet(`${sheetHead("Безопасность")}
+    <div class="card gap-14">
+      ${[["Только реальные люди","Регистрация через eGov: у каждого участника подтверждённая личность. Анонимных аккаунтов нет."],
+         ["ИИ проверяет каждое фото","Отчёты и метки без фото не принимаются. ИИ отклоняет снимки без мусора, скриншоты, лица и документы."],
+         ["Защита от «тайников»","Метку, на которой видно укромное место без явного мусора, ИИ отклоняет с пометкой «подозрительно»."],
+         ["Доверенные организаторы","Старосты, учителя, директора, представители компаний и эко-организаций публикуют метки сразу и создают субботники. Метки остальных ждут 2 подтверждения или проверки организатором."],
+         ["Детский режим","Детям не видны чужие профили и личные данные. Эко-питомец никогда не спрашивает адрес, школу или фото людей."]]
+        .map(([t,d])=>`<div class="row align-start"><span class="check">${I.check}</span><div><b>${t}</b><p class="small muted">${d}</p></div></div>`).join("")}
+    </div>
+    <p class="small muted">Прототип для хакатона: вход через eGov здесь симулирован. В рабочей версии — авторизация eGov ID.</p>`);
+}
+
+/* ============ MAP (three.js) ============ */
+const LNG0=76.92, LAT0=43.255, KX=81.1, KZ=111.2;
+const toXZ=(lat,lng)=>[(lng-LNG0)*KX, -(lat-LAT0)*KZ];
+const toLL=(x,z)=>[LAT0 - z/KZ, LNG0 + x/KX];
+function hash(x,z){ const s=Math.sin(x*127.1+z*311.7)*43758.5453; return s-Math.floor(s); }
+function vnoise(x,z){ const xi=Math.floor(x), zi=Math.floor(z), xf=x-xi, zf=z-zi; const u=xf*xf*(3-2*xf), v=zf*zf*(3-2*zf);
+  const a=hash(xi,zi), b=hash(xi+1,zi), c=hash(xi,zi+1), d=hash(xi+1,zi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
+function fbm(x,z){ let s=0,a=.5,f=1; for(let i=0;i<5;i++){ s+=a*vnoise(x*f,z*f); a*=.5; f*=2.03; } return s; }
+const sstep=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+function heightAt(x,z){
+  let h=(z+14)*0.012;
+  const m=sstep(5.6,11,z+Math.sin(x*0.35)*1.2);
+  const ridge=1-Math.abs(fbm(x*0.22+3,z*0.22)*2-1);
+  h+=m*(0.6+3.2*ridge*sstep(5,14,z)+0.6*fbm(x*0.5,z*0.5));
+  const kt=Math.hypot(x-4.6,z-2.4); h+=0.45*Math.exp(-kt*kt/2.2); // Кок-Тобе
+  return h;
+}
+const MAP = {
+  ok:false, active:false, mode:false, scene:null, cam:null, ren:null, ctl:null, terrain:null, markers:null, raf:0, box:null, built:false,
+  init(box){
+    if(typeof THREE==="undefined"){ box.innerHTML=`<div class="map-fallback"><div><b>3D-карта не загрузилась</b><p class="small muted">Список точек ниже работает.</p></div></div>`; return; }
+    this.box=box;
+    if(this.built){ box.prepend(this.ren.domElement); this.resize(); this.sync(); return; }
+    const W=box.clientWidth, H=box.clientHeight;
+    const scene=new THREE.Scene(); this.scene=scene;
+    const cs=getComputedStyle(document.documentElement);
+    const dark=cs.getPropertyValue("color-scheme").includes("dark") || matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme!=="light";
+    this.dark=dark;
+    scene.background=new THREE.Color(dark?0x0f1c15:0xd6ebe3);
+    scene.fog=new THREE.Fog(scene.background, 38, 70);
+    const cam=new THREE.PerspectiveCamera(45,W/H,0.1,200); cam.position.set(2,20,24); this.cam=cam;
+    const ren=new THREE.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio)); ren.setSize(W,H); this.ren=ren;
+    box.prepend(ren.domElement);
+    const ctl=new THREE.OrbitControls(cam,ren.domElement); ctl.target.set(1,0,1); ctl.enableDamping=true; ctl.maxPolarAngle=1.3; ctl.minDistance=6; ctl.maxDistance=48; ctl.update(); this.ctl=ctl;
+    scene.add(new THREE.HemisphereLight(0xffffff, dark?0x1b2a20:0x8aa58f, dark?0.75:0.85));
+    const sun=new THREE.DirectionalLight(0xfff2d6, dark?0.6:0.9); sun.position.set(-10,20,-6); scene.add(sun);
+    // terrain
+    const geo=new THREE.PlaneGeometry(34,30,170,150); geo.rotateX(-Math.PI/2); geo.translate(0,0,-0.5);
+    const pos=geo.attributes.position, cols=[];
+    const cCity=new THREE.Color(dark?0x2a3a2e:0xdfe6cf), cPark=new THREE.Color(dark?0x2c5a37:0x9fcf8f), cFoot=new THREE.Color(dark?0x2f6b3e:0x5f9e5b), cRock=new THREE.Color(dark?0x5a5650:0x9b8f80), cSnow=new THREE.Color(0xf4f6f8);
+    for(let i=0;i<pos.count;i++){
+      const x=pos.getX(i), z=pos.getZ(i), h=heightAt(x,z); pos.setY(i,h);
+      const m=sstep(5.6,11,z+Math.sin(x*0.35)*1.2); let c=cCity.clone();
+      const g=fbm(x*0.6+9,z*0.6); if(g>0.62) c.lerp(cPark,0.6);
+      c.lerp(cFoot,clamp(m*1.6,0,1)); if(h>1.7) c.lerp(cRock,clamp((h-1.7)/0.9,0,1)); if(h>2.7) c.lerp(cSnow,clamp((h-2.7)/0.5,0,1));
+      cols.push(c.r,c.g,c.b);
+    }
+    geo.setAttribute("color",new THREE.Float32BufferAttribute(cols,3)); geo.computeVertexNormals();
+    this.terrain=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true})); scene.add(this.terrain);
+    // buildings
+    const bGeo=new THREE.BoxGeometry(1,1,1); bGeo.translate(0,0.5,0);
+    const N=1500, inst=new THREE.InstancedMesh(bGeo,new THREE.MeshLambertMaterial({color:dark?0x8c9a90:0xffffff}),N);
+    const mtx=new THREE.Matrix4(); let n=0, tries=0;
+    while(n<N && tries<20000){ tries++;
+      const x=(Math.random()*2-1)*13, z=-11+Math.random()*17.5;
+      if(z>6.2+Math.sin(x*0.35)*1.2-1.2) continue;
+      if([-2.8,0.4,4.5].some(rx=>Math.abs(x-rx)<0.25)) continue;
+      const dc=Math.hypot(x-1.5,z-0.5); if(Math.random()<dc/22) continue;
+      if(Math.hypot(x-4.6,z-2.4)<1.1) continue;
+      const hh=0.06+Math.random()*0.2+(dc<4?Math.random()*0.55:0), w=0.12+Math.random()*0.18;
+      mtx.compose(new THREE.Vector3(x,heightAt(x,z),z),new THREE.Quaternion(),new THREE.Vector3(w,hh,w*(0.7+Math.random()*0.6))); inst.setMatrixAt(n++,mtx);
+    }
+    inst.count=n; scene.add(inst);
+    // rivers
+    const river=(pts,col)=>{ const curve=new THREE.CatmullRomCurve3(pts.map(([x,z])=>new THREE.Vector3(x,heightAt(x,z)+0.04,z))); const tg=new THREE.TubeGeometry(curve,120,0.07,6,false); scene.add(new THREE.Mesh(tg,new THREE.MeshLambertMaterial({color:col}))); };
+    const rc=dark?0x3f8fb0:0x4aa3c8;
+    river([[-3.6,12],[-3.0,8],[-2.8,4],[-2.9,0],[-2.6,-5],[-2.2,-12]],rc);
+    river([[0.8,11],[0.6,7],[0.4,3],[0.4,-1],[0.9,-6],[1.4,-12]],rc);
+    river([[6.5,12],[5.6,8],[4.8,4],[4.5,0],[5.2,-5],[6.8,-12]],rc);
+    // avenues
+    const road=(pts)=>{ const v=[]; for(let i=0;i<pts.length-1;i++){ const [x1,z1]=pts[i],[x2,z2]=pts[i+1]; for(let t=0;t<=1;t+=0.05){ const x=x1+(x2-x1)*t, z=z1+(z2-z1)*t; v.push(new THREE.Vector3(x,heightAt(x,z)+0.03,z)); } } scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(v),new THREE.LineBasicMaterial({color:dark?0xd9b84a:0xd4a72c}))); };
+    road([[-9,4.4],[7,4.6]]); road([[-12,1.7],[6,1.7]]); road([[-12,-2.1],[8,-2.1]]); road([[2.8,-4],[2.8,4.8]]); road([[-5.3,-10],[-5.3,5]]);
+    // labels
+    const label=(text,x,z,y,size,color)=>{ const c=document.createElement("canvas"), g=c.getContext("2d"); const fs=48; g.font=`700 ${fs}px "Golos Text",system-ui,sans-serif`; const w=g.measureText(text).width+28; c.width=w; c.height=fs+24; g.font=`700 ${fs}px "Golos Text",system-ui,sans-serif`;
+      g.fillStyle=dark?"rgba(13,23,17,.72)":"rgba(255,255,255,.82)"; const r=20; g.beginPath(); g.moveTo(r,0); g.arcTo(w,0,w,c.height,r); g.arcTo(w,c.height,0,c.height,r); g.arcTo(0,c.height,0,0,r); g.arcTo(0,0,w,0,r); g.fill();
+      g.fillStyle=color||(dark?"#e5efe2":"#14261a"); g.textBaseline="middle"; g.fillText(text,14,c.height/2+2);
+      const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter; const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); sp.scale.set(size*w/c.height,size,1); sp.position.set(x,heightAt(x,z)+y,z); sp.renderOrder=5; scene.add(sp); };
+    DISTRICTS.forEach(d=>{ const [x,z]=toXZ(d.lat,d.lng); label(d.name,x,z,1.0,0.62); });
+    label("Кок-Тобе",4.6,2.4,1.2,0.5,dark?"#93dba5":"#1d5c36");
+    label("Заилийский Алатау",1,12.5,1.6,0.75,dark?"#93dba5":"#1d5c36");
+    label("Медеу",6.2,9.5,1.2,0.5,dark?"#93dba5":"#1d5c36");
+    this.markers=new THREE.Group(); scene.add(this.markers);
+    // picking
+    const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let down=null;
+    ren.domElement.addEventListener("pointerdown",e=>{ down=[e.clientX,e.clientY]; });
+    ren.domElement.addEventListener("pointerup",e=>{
+      if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6) return; down=null;
+      const r=ren.domElement.getBoundingClientRect(); ptr.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(ptr,cam);
+      if(this.mode){ const hit=ray.intersectObject(this.terrain)[0]; if(hit){ const [lat,lng]=toLL(hit.point.x,hit.point.z); this.setMode(false); openAddSpot(lat,lng); } return; }
+      const hit=ray.intersectObjects(this.markers.children,true)[0];
+      if(hit){ let o=hit.object; while(o&&!o.userData.id) o=o.parent; if(o){ if(o.userData.kind==="spot") openSpot(o.userData.id); else if(o.userData.kind==="event") openEvent(o.userData.id); else openFacility(o.userData.id); } }
+    });
+    new ResizeObserver(()=>this.resize()).observe(box);
+    this.built=true; this.ok=true; this.sync(); this.loop();
+  },
+  resize(){ if(!this.ren||!this.box) return; const W=this.box.clientWidth,H=this.box.clientHeight; if(!W||!H) return; this.ren.setSize(W,H); this.cam.aspect=W/H; this.cam.updateProjectionMatrix(); },
+  sync(){
+    if(!this.ok) return; const g=this.markers; while(g.children.length){ const c=g.children.pop(); c.traverse(o=>{o.geometry?.dispose();}); }
+    const f=S.mapFilter;
+    if(f==="all"||f==="spots") visibleSpots().forEach(s=>{
+      const [x,z]=toXZ(s.lat,s.lng), y=heightAt(x,z), pr=spotPriority(s), pending=s.status!=="active";
+      const col= pending?0xf2c12e : pr>=7?0xdd4b35 : pr>=4?0xf08a24 : 0xf2c12e;
+      const hgt=0.5+Math.min(pr,12)*0.22;
+      const grp=new THREE.Group(); grp.position.set(x,y,z); grp.userData={id:s.id,kind:"spot"};
+      const mat=new THREE.MeshLambertMaterial({color:col,transparent:pending,opacity:pending?0.6:1});
+      const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,hgt,8),mat); stem.position.y=hgt/2;
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.2+Math.min(pr,10)*0.015,16,12),mat); head.position.y=hgt;
+      const ring=new THREE.Mesh(new THREE.RingGeometry(0.25,0.4+pr*0.04,24),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.35,side:THREE.DoubleSide})); ring.rotation.x=-Math.PI/2; ring.position.y=0.05; ring.userData.pulse=true;
+      grp.add(stem,head,ring); g.add(grp);
+    });
+    if(f==="all"||f==="events") upcomingEvents().forEach(e=>{
+      if(e.lat==null) return; const [x,z]=toXZ(e.lat,e.lng), y=heightAt(x,z);
+      const grp=new THREE.Group(); grp.position.set(x,y,z); grp.userData={id:e.id,kind:"event"};
+      const mat=new THREE.MeshLambertMaterial({color:this.dark?0x4cbf67:0x2f9e4f});
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.3,6),mat); pole.position.y=0.65;
+      const fl=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.3,0.04),mat); fl.position.set(0.27,1.12,0);
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.26,0.1,16),mat); base.position.y=0.05;
+      grp.add(pole,fl,base); g.add(grp);
+    });
+    FACILITIES.filter(x=>f==="all"||f===x.kind).forEach(x=>{
+      const [px,pz]=toXZ(x.lat,x.lng), y=heightAt(px,pz), color=x.kind==="recycling"?0x2580bd:0x7662a8;
+      const grp=new THREE.Group(); grp.position.set(px,y,pz); grp.userData={id:x.id,kind:"facility"};
+      const mat=new THREE.MeshLambertMaterial({color});
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.75,8),mat); pole.position.y=0.38;
+      const head=new THREE.Mesh(x.kind==="recycling"?new THREE.OctahedronGeometry(0.28):new THREE.BoxGeometry(0.4,0.4,0.4),mat); head.position.y=0.85;
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.08,16),mat); base.position.y=0.04;
+      grp.add(pole,head,base); g.add(grp);
+    });
+  },
+  loop(){ cancelAnimationFrame(this.raf); const tick=t=>{ if(!this.active) return; this.ctl.update(); const s=1+0.25*Math.sin(t/400); this.markers.children.forEach(grp=>grp.children.forEach(c=>{ if(c.userData.pulse) c.scale.set(s,s,s); })); this.ren.render(this.scene,this.cam); this.raf=requestAnimationFrame(tick); }; this.raf=requestAnimationFrame(tick); },
+  setActive(on){ this.active=on; if(on&&this.ok) this.loop(); },
+  setMode(on){ this.mode=on; const h=$("#mapHint"); if(h) h.hidden=!on; const b=$("#mAdd"); if(b) b.innerHTML=on?`${I.x} Отмена`:`${I.plus} Отметить точку`; },
+};
+
+function renderMapScreen(){
+  const el=$("#s-map");
+  if(!el.dataset.built){
+    el.dataset.built="1";
+    el.innerHTML=`<div class="row between wrap-ok"><div><p class="eyebrow">Карта загрязнений · 3D</p><h1>Алматы</h1></div><button class="btn sm" id="mAI" type="button">${I.spark} ИИ-анализ</button></div>
+      <div class="mapbox" id="mapBox">
+        <div class="map-ui"><div class="seg glass map-filter-segment" id="mSeg">${[["all","Всё"],["spots","Мусор"],["events","Субботники"],["recycling","Приём"],["bulky","Крупные контейнеры"]].map(([k,t])=>`<button type="button" data-f="${k}" aria-pressed="${S.mapFilter===k}">${t}</button>`).join("")}</div></div>
+        <div class="map-hint glass" id="mapHint" hidden>Нажмите на карту, где мусор</div>
+        <div class="map-bottom"><div class="legend glass"><span><i class="legend-high"></i>Высокий приоритет</span><span><i class="legend-medium"></i>Средний</span><span><i class="legend-low"></i>Низкий / на проверке</span><span><i class="legend-event"></i>Субботник</span><span><i class="legend-recycling"></i>Пункт приёма</span><span><i class="legend-bin"></i>Крупный контейнер</span></div>
+          <button class="btn primary sm" id="mAdd" type="button">${I.plus} Отметить точку</button></div>
+      </div>
+      <p class="small muted">Вращайте карту пальцем, приближайте щипком. Чем больше людей подтвердили точку, тем выше столбик.</p>
+      <div id="mAIOut"></div>
+      <div class="card"><div class="row between"><h2>Точки по приоритету</h2><span class="small muted" id="mCount"></span></div><div id="mList"></div></div>`;
+    el.insertAdjacentHTML("beforeend",`<div class="card"><div><h2>Пункты приёма и крупные контейнеры</h2><p class="small muted">Найденные адреса из каталога 2ГИС, координаты сверены по OpenStreetMap. Перед поездкой уточняйте режим работы, доступность и возможность сдачи отходов.</p></div><div id="mFacilities">${FACILITIES.map(facilityItem).join("")}</div></div>`);
+    el.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ S.mapFilter=b.dataset.f; el.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); MAP.sync(); });
+    $("#mAdd").onclick=()=>MAP.setMode(!MAP.mode);
+    $("#mAI").onclick=mapAnalysis;
+    requestAnimationFrame(()=>{ MAP.init($("#mapBox")); MAP.setActive(S.tab==="map"); });
+  }
+  const list=visibleSpots();
+  $("#mCount").textContent=list.length+" "+plural(list.length,"точка","точки","точек");
+  $("#mList").innerHTML=list.length?list.slice(0,25).map(spotItem).join(""):emptyBox(I.pin,"Пока нет отмеченных точек","Нажмите «Отметить точку» и выберите место на карте.");
+  bindCommon($("#mList"));
+  bindCommon($("#mFacilities"));
+}
+async function mapAnalysis(){
+  const out=$("#mAIOut"), btn=$("#mAI"); btn.disabled=true;
+  out.innerHTML=`<div class="ai-box"><span class="ai-tag">${I.spark} ИИ-аналитика карты</span><div class="md small" id="mAIText">ИИ думает…</div></div>`;
+  const data={ spots:visibleSpots().map(s=>({district:districtName(s.district),title:s.title,kind:s.kind,severity:s.severity,confirms:s.confirms?.length||0,status:s.status})),
+    cleaned:S.spots.filter(s=>s.status==="cleaned").length,
+    events:upcomingEvents().map(e=>({title:e.title,district:districtName(e.district),date:e.date,members:e.members?.length||0})) };
+  const prompt=`Ты — аналитик данных эко-приложения «Таза Алматы». Вот данные карты загрязнений города (JSON):\n${JSON.stringify(data)}\n\nСделай короткий отчёт по-русски (до 130 слов), списком "- ":\n- главные очаги загрязнения по районам;\n- где провести ближайший субботник и почему;\n- какие типы загрязнений преобладают;\n- 2 рекомендации акимату.\nОпирайся только на эти данные. Если данных мало — так и скажи и предложи, что собрать.`;
+  try{ const {text}=await aiText(prompt,{onText:({text})=>{$("#mAIText").innerHTML=md(text);}}); $("#mAIText").innerHTML=md(text); }
+  catch(e){ $("#mAIText").textContent=aiErrText(e); }
+  btn.disabled=false;
+}
+
+/* add spot */
+function openAddSpot(lat,lng){
+  const d=nearestDistrict(lat,lng);
+  const R={blob:null,thumb:null,ai:null,lat,lng,district:d.id};
+  openSheet(`${sheetHead("Новая точка загрязнения")}
+    <div class="row wrap-ok"><span class="badge b-plain">${I.pin} ${esc(d.name)} район</span><span class="badge b-plain num">${lat.toFixed(4)}, ${lng.toFixed(4)}</span></div>
+    <label class="photo-drop" id="sDrop">${I.cam}<b>Фото загрязнения (обязательно)</b><span class="small muted">Без людей и номеров машин</span><input type="file" id="sFile" accept="image/*" capture="environment" hidden></label>
+    <div id="sAI"></div>
+    <label class="f">Коротко, что здесь<input type="text" id="sTitle" maxlength="60" placeholder="Например: мусор у берега Есентая"></label>
+    <p class="small muted" id="sNote">${S.pub.trusted?"Вы проверенный организатор — точка появится на карте сразу после ИИ-проверки.":"Точка появится как «на проверке» и станет подтверждённой после 2 подтверждений других участников или организатора."}</p>
+    <button class="btn primary block" id="sSubmit" type="button" disabled>Опубликовать точку</button>`, sheet=>{
+    const file=$("#sFile",sheet);
+    file.onchange=async()=>{
+      const f=file.files[0]; if(!f) return;
+      try{ Object.assign(R,await processPhoto(f)); }catch{ toast("Не удалось открыть фото"); return; }
+      $("#sDrop",sheet).innerHTML=`<img src="${R.thumb}" alt="Фото места">`; $("#sDrop",sheet).appendChild(file);
+      const box=$("#sAI",sheet);
+      if(!S.sample||!S.imgOK){ R.ai={verdict:"review",summary:"ИИ-проверка недоступна в этом просмотре",reason:"Точка будет ждать подтверждения людьми."}; renderAIResult(box,R.ai,"spot"); $("#sSubmit",sheet).disabled=false; return; }
+      box.innerHTML=`<div class="ai-box"><span class="ai-tag">${I.spark} ИИ проверяет место</span><div class="row"><span class="spin"></span><span class="small">Оцениваем загрязнение и безопасность метки…</span></div></div>`;
+      sheetAbort=new AbortController();
+      try{ R.ai=await aiJSON(PROMPT_SPOT,{images:[R.blob],signal:sheetAbort.signal,cache:false}); }
+      catch(e){ if(e.code==="cancelled") return; R.ai={verdict:"review",summary:"ИИ не смог проверить фото",reason:aiErrText(e)}; }
+      renderAIResult(box,R.ai,"spot");
+      if(R.ai.verdict!=="reject" && !$("#sTitle",sheet).value && R.ai.kind) $("#sTitle",sheet).value=R.ai.kind[0].toUpperCase()+R.ai.kind.slice(1)+" — "+d.name;
+      $("#sSubmit",sheet).disabled = R.ai.verdict==="reject";
+    };
+    $("#sSubmit",sheet).onclick=async()=>{
+      const btn=$("#sSubmit",sheet); btn.disabled=true;
+      const okAI=R.ai.verdict==="ok";
+      const spot={lat:R.lat,lng:R.lng,district:R.district,title:$("#sTitle",sheet).value.trim()||"Загрязнение",kind:R.ai.kind||"",severity:clamp(+R.ai.severity||2,1,5),photo:R.thumb,
+        uid:S.uid,authorName:S.pub.trusted?S.pub.name:"",authorRole:S.pub.roleTitle,trusted:!!S.pub.trusted,confirms:[],reports:[],
+        status:(S.pub.trusted&&okAI)?"active":"pending",ai:{verdict:R.ai.verdict,summary:R.ai.summary||"",confidence:R.ai.confidence??null},at:Date.now()};
+      try{ await Store.add("spots",spot); await saveMe({points:(S.pub.points||0)+(okAI?5:0)}); closeSheet(); toast(okAI?"Точка отмечена, +5 баллов":"Точка отправлена на проверку"); }
+      catch(e){ btn.disabled=false; toast("Не удалось сохранить: "+(e.code||"ошибка")); }
+    };
+  });
+}
+function openSpot(id){
+  const s=S.spots.find(x=>x.id===id); if(!s) return;
+  const [st,cls]=spotState(s), c=s.confirms?.length||0, mine=s.uid===S.uid, confirmed=s.confirms?.includes(S.uid);
+  openSheet(`${sheetHead(esc(s.title||"Загрязнение"))}
+    ${s.photo?`<img class="ph" src="${s.photo}" alt="Фото места">`:""}
+    <div class="row wrap-ok"><span class="badge ${cls}">${st}</span><span class="badge b-plain">${esc(districtName(s.district))}</span>${s.kind?`<span class="badge b-plain">${esc(s.kind)}</span>`:""}<span class="badge b-plain">Серьёзность ${s.severity||"?"}/5</span></div>
+    ${s.ai?.summary?`<div class="ai-box"><span class="ai-tag">${I.spark} ИИ</span><p class="small">${esc(s.ai.summary)}</p></div>`:""}
+    <div class="card flat gap-4"><span class="small"><b>${c}</b> ${plural(c,"человек подтвердил","человека подтвердили","человек подтвердили")} · приоритет ${spotPriority(s)}</span>
+      <span class="small muted">Отметил(а): ${s.trusted?`${esc(s.authorName||"")} · ${esc(s.authorRole||"")} · проверенный организатор`:`участник с eGov · ${esc(s.authorRole||"")}`} · ${ago(s.at)}</span></div>
+    <div class="grid2">
+      <button class="btn primary" id="spC" type="button" ${mine||confirmed?"disabled":""}>${I.check} ${confirmed?"Вы подтвердили":"Подтвердить"}</button>
+      <button class="btn" id="spE" type="button" ${S.pub.trusted?"":"disabled title=\"Только для проверенных организаторов\""}>${I.cal} Субботник здесь</button>
+      ${S.pub.trusted&&s.status==="pending"?`<button class="btn sun" id="spA" type="button">${I.shield} Одобрить</button>`:""}
+      ${(S.pub.trusted||mine)?`<button class="btn" id="spD" type="button">${I.leaf} Убрано</button>`:""}
+    </div>
+    <button class="btn danger block sm" id="spR" type="button">${I.flag} Пожаловаться на метку</button>`, sheet=>{
+    const upd=async(patch,msg)=>{ try{ await Store.update("spots/"+s.id,patch); toast(msg); closeSheet(); }catch(e){ toast("Не удалось: "+(e.code||"ошибка")); } };
+    $("#spC",sheet).onclick=async()=>{ const conf=[...(s.confirms||[]),S.uid]; const patch={confirms:conf}; if(s.status==="pending"&&conf.length>=2&&s.ai?.verdict!=="reject") patch.status="active"; await upd(patch,"Спасибо! +1 балл"); saveMe({points:(S.pub.points||0)+1}); };
+    $("#spA",sheet)&&($("#spA",sheet).onclick=()=>upd({status:"active",approvedBy:S.pub.roleTitle},"Точка одобрена"));
+    $("#spD",sheet)&&($("#spD",sheet).onclick=()=>upd({status:"cleaned",cleanedAt:Date.now()},"Отлично! Точка отмечена как убранная"));
+    $("#spE",sheet).onclick=()=>{ closeSheet(); openCreateEvent({lat:s.lat,lng:s.lng,district:s.district,place:s.title}); };
+    $("#spR",sheet).onclick=async()=>{ const rep=[...new Set([...(s.reports||[]),S.uid])]; const patch={reports:rep}; if(rep.length>=3) patch.status="rejected"; await upd(patch,"Жалоба отправлена модераторам"); };
+  });
+}
+
+/* ============ EVENTS ============ */
+function renderEvents(){
+  const ev=upcomingEvents(), past=S.events.filter(e=>!ev.includes(e)).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  $("#s-events").innerHTML=`<div class="row between wrap-ok"><div><p class="eyebrow">Эко-организации и школы</p><h1>Субботники</h1></div>
+      ${S.pub.trusted?`<button class="btn primary sm" type="button" id="evNew">${I.plus} Создать</button>`:""}</div>
+    ${S.pub.trusted?"":`<div class="card flat small organizer-note"><span class="safety-icon">${I.shield.replace("<svg","<svg width=22 height=22")}</span><span>Создавать субботники могут проверенные организаторы: старосты, учителя, компании и эко-организации. Участвовать может каждый.</span></div>`}
+    <div class="card">${ev.length?ev.map(eventItem).join(""):emptyBox(I.cal,"Нет запланированных субботников","Когда организатор создаст субботник, он появится здесь и на карте.")}</div>
+    ${past.length?`<div class="card"><h2>Прошедшие</h2>${past.map(eventItem).join("")}</div>`:""}
+    <div class="card secondary-feature"><div><h2>Сообщества и волонтёрство</h2><p class="small muted">Выберите направление и присоединитесь к волонтёрскому списку.</p></div>
+      <div class="small muted">Демонстрационные сообщества: реальные организации могут подключиться в полной версии.</div>
+      ${VOLUNTEER_GROUPS.map(g=>{const joined=(S.priv.volunteerGroups||[]).includes(g.id);return `<div class="volunteer-row"><div class="min-width-0"><b>${esc(g.title)}</b><div class="small muted">${esc(g.description)}</div><div class="chips">${g.interests.map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</div></div>
+        <button class="btn sm ${joined?"":"primary"}" type="button" data-volunteer="${g.id}" aria-pressed="${joined}">${joined?"Вы записаны":"Стать волонтёром"}</button></div>`;}).join("")}
+    </div>`;
+  bindCommon($("#s-events"));
+  $("#s-events").querySelectorAll("[data-volunteer]").forEach(b=>b.onclick=()=>toggleVolunteer(b.dataset.volunteer,b));
+  $("#evNew")&&($("#evNew").onclick=()=>openCreateEvent({}));
+}
+async function toggleVolunteer(id,button){
+  const group=VOLUNTEER_GROUPS.find(g=>g.id===id); if(!group) return;
+  const current=S.priv.volunteerGroups||[], joined=current.includes(id);
+  const next=joined?current.filter(x=>x!==id):[...current,id];
+  if(button) button.disabled=true;
+  try{
+    await Store.set(privPath(),{...S.priv,volunteerGroups:next});
+    S.priv={...S.priv,volunteerGroups:next};
+    renderEvents();
+    toast(joined?"Вы вышли из сообщества":"Вы записались в волонтёры");
+  }catch(e){
+    if(button) button.disabled=false;
+    toast("Не удалось сохранить: "+(e.code||"ошибка"));
+  }
+}
+function openEvent(id){
+  const e=S.events.find(x=>x.id===id); if(!e) return;
+  const joined=e.members?.includes(S.uid), n=e.members?.length||0;
+  const reps=okReports().filter(r=>r.event===e.id), items=reps.reduce((a,r)=>a+(r.items||0),0);
+  openSheet(`${sheetHead(esc(e.title))}
+    <div class="row wrap-ok"><span class="badge b-ok">${I.cal} ${fmtDate(e.date)}</span><span class="badge b-plain">${esc(districtName(e.district))}</span><span class="badge b-plain">${n} ${plural(n,"участник","участника","участников")}</span></div>
+    <div class="card flat gap-6"><span class="small"><b>Место:</b> ${esc(e.place||"—")}</span><span class="small"><b>Организатор:</b> ${esc(e.org||"")} · ${esc(e.orgRole||"")} <span class="badge b-ok">${I.shield} eGov</span></span>
+      ${items?`<span class="small"><b>Собрано:</b> ${items} ${plural(items,"предмет","предмета","предметов")}</span>`:""}</div>
+    ${e.desc?`<div class="card md small">${md(e.desc)}</div>`:""}
+    <div class="grid2"><button class="btn ${joined?"":"primary"}" id="evJ" type="button">${joined?"Не пойду":"Я пойду"}</button>
+      <button class="btn" id="evR" type="button" ${joined?"":"disabled"}>${I.cam} Отчитаться</button></div>`, sheet=>{
+    $("#evJ",sheet).onclick=async()=>{ const m=joined?(e.members||[]).filter(x=>x!==S.uid):[...(e.members||[]),S.uid]; try{ await Store.update("events/"+e.id,{members:m}); toast(joined?"Вы отменили участие":"Вы записаны! Отчёт с этого субботника даст +10 баллов"); closeSheet(); }catch(err){ toast("Не удалось: "+(err.code||"ошибка")); } };
+    $("#evR",sheet).onclick=()=>{ closeSheet(); openReport(e.id); };
+  });
+}
+function openCreateEvent(pre){
+  const def=new Date(Date.now()+3*864e5); def.setHours(10,0,0,0);
+  const local=new Date(def.getTime()-def.getTimezoneOffset()*6e4).toISOString().slice(0,16);
+  openSheet(`${sheetHead("Новый субботник")}
+    <label class="f">Название<input type="text" id="eT" maxlength="60" placeholder="Чистый берег Есентая"></label>
+    <div class="grid2"><label class="f">Дата и время<input type="datetime-local" id="eD" value="${local}"></label>
+      <label class="f">Район<select id="eDist">${DISTRICTS.map(d=>`<option value="${d.id}" ${(pre.district||S.pub.district)===d.id?"selected":""}>${d.name}</option>`).join("")}</select></label></div>
+    <label class="f">Место встречи<input type="text" id="eP" maxlength="80" value="${esc(pre.place||"")}" placeholder="Вход в парк, у фонтана"></label>
+    <label class="f">Организация<input type="text" id="eO" maxlength="60" value="${esc(S.pub.org||"")}" placeholder="Школа, компания или эко-организация"></label>
+    <label class="f">Описание<textarea id="eDesc" maxlength="1200" placeholder="Что будем делать, что взять с собой"></textarea></label>
+    <button class="btn" type="button" id="eAI">${I.spark} ИИ: описание и чек-лист</button>
+    <p class="small muted" id="eErr" role="alert"></p>
+    <button class="btn primary block" type="button" id="eSave">Опубликовать</button>`, sheet=>{
+    $("#eAI",sheet).onclick=async()=>{
+      const b=$("#eAI",sheet), ta=$("#eDesc",sheet); b.disabled=true; ta.value="ИИ пишет…";
+      const prompt=`Напиши по-русски описание субботника для приложения «Таза Алматы». Название: «${$("#eT",sheet).value||"Субботник"}». Район: ${districtName($("#eDist",sheet).value)}. Место: ${$("#eP",sheet).value||"не указано"}. Дата: ${$("#eD",sheet).value}. Организатор: ${$("#eO",sheet).value}.
+Формат: 2 предложения-приглашения, затем "Что взять:" списком "- " (4–6 пунктов), затем "Безопасность:" списком "- " (3 пункта, включая правила для детей: только с взрослым, перчатки, не трогать шприцы и стекло руками). Всего до 120 слов. Без эмодзи.`;
+      try{ const {text}=await aiText(prompt,{onText:({text})=>{ta.value=text;}}); ta.value=text; }catch(e){ ta.value=""; toast(aiErrText(e)); }
+      b.disabled=false;
+    };
+    $("#eSave",sheet).onclick=async()=>{
+      const t=$("#eT",sheet).value.trim(), dt=$("#eD",sheet).value, dist=$("#eDist",sheet).value;
+      if(!t||!dt){ $("#eErr",sheet).textContent="Укажите название и дату."; return; }
+      const dc=DISTRICTS.find(d=>d.id===dist);
+      const lat=pre.lat ?? dc.lat+(Math.random()-.5)*0.01, lng=pre.lng ?? dc.lng+(Math.random()-.5)*0.014;
+      const ev={title:t,date:new Date(dt).toISOString(),district:dist,place:$("#eP",sheet).value.trim(),org:$("#eO",sheet).value.trim()||S.pub.name,orgRole:S.pub.roleTitle,desc:$("#eDesc",sheet).value.trim(),lat,lng,uid:S.uid,members:[S.uid],at:Date.now()};
+      $("#eSave",sheet).disabled=true;
+      try{ await Store.add("events",ev); closeSheet(); toast("Субботник опубликован и появился на карте"); }catch(e){ $("#eSave",sheet).disabled=false; $("#eErr",sheet).textContent="Не удалось сохранить: "+(e.code||"ошибка"); }
+    };
+  });
+}
+
+/* ============ RANK / COMPETITIONS / REWARDS ============ */
+function leaderboard(league){
+  const m=new Map();
+  for(const r of okReports()){
+    let key;
+    if(league==="district") key=districtName(r.district);
+    else if(league==="people") key=r.uid;
+    else if(league==="school") key=reportSchool(r);
+    else { if(r.league!==league||!r.team) continue; key=r.team; }
+    if(!key) continue;
+    const o=m.get(key)||{key,points:0,items:0,name:league==="people"?r.name:key}; o.points+=r.points||0; o.items+=r.items||0; m.set(key,o);
+  }
+  return [...m.values()].sort((a,b)=>b.points-a.points);
+}
+function reportSchool(report){
+  if(report.school) return report.school;
+  const profile=S.profiles.find(p=>p.id===report.uid);
+  return profile&&(profile.group==="school"||profile.role==="teacher")?profile.org:null;
+}
+function openConnection(){
+  const connections=S.priv.connections||[];
+  const linkedIds=connections.map(c=>c.profileId).filter(Boolean);
+  const candidates=S.profiles.filter(p=>p.id!==S.uid&&p.name&&!linkedIds.includes(p.id));
+  openSheet(`${sheetHead("Добавить близкого человека")}
+    <label class="f">Имя<input type="text" id="cnName" maxlength="40" placeholder="Например, Алия" autocomplete="off"></label>
+    <label class="f">Кто это для вас?<select id="cnRelation">${RELATIONSHIPS.map(([id,title])=>`<option value="${id}">${title}</option>`).join("")}</select></label>
+    <label class="f">Аккаунт участника (необязательно)<select id="cnProfile"><option value="">Не привязывать сейчас</option>${candidates.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.team?" · "+esc(p.team):""}</option>`).join("")}</select></label>
+    <p class="small muted">Без привязанного аккаунта контакт хранится только в вашем списке и не участвует в подсчёте эко-баттлов.</p>
+    <p class="small muted" id="cnError" role="alert"></p>
+    <button class="btn primary block" type="button" id="cnSave">Добавить</button>`,sheet=>{
+    const profile=$("#cnProfile",sheet), name=$("#cnName",sheet);
+    profile.onchange=()=>{
+      const selected=S.profiles.find(p=>p.id===profile.value);
+      if(selected&&!name.value.trim()) name.value=selected.name;
+    };
+    $("#cnSave",sheet).onclick=async()=>{
+      const contactName=name.value.trim(), profileId=profile.value||null, relation=$("#cnRelation",sheet).value;
+      if(!contactName){ $("#cnError",sheet).textContent="Введите имя или выберите аккаунт участника."; return; }
+      if(profileId&&connections.some(c=>c.profileId===profileId)){ $("#cnError",sheet).textContent="Этот аккаунт уже есть в вашем списке."; return; }
+      if(connections.some(c=>c.name.toLocaleLowerCase()===contactName.toLocaleLowerCase()&&c.relation===relation)){
+        $("#cnError",sheet).textContent="Такой контакт с этим статусом уже добавлен."; return;
+      }
+      const next=[...connections,{id:rid(),name:contactName,relation,profileId,at:Date.now()}], button=$("#cnSave",sheet);
+      button.disabled=true;
+      try{
+        await Store.set(privPath(),{...S.priv,connections:next});
+        S.priv={...S.priv,connections:next};
+        closeSheet(); renderRank(); toast("Контакт добавлен");
+      }catch(e){
+        button.disabled=false;
+        $("#cnError",sheet).textContent="Не удалось сохранить: "+(e.code||"ошибка");
+      }
+    };
+  });
+}
+async function removeConnection(id){
+  const connections=S.priv.connections||[], next=connections.filter(c=>c.id!==id);
+  if(next.length===connections.length) return;
+  try{
+    await Store.set(privPath(),{...S.priv,connections:next});
+    S.priv={...S.priv,connections:next};
+    renderRank(); toast("Контакт удалён");
+  }catch(e){ toast("Не удалось удалить: "+(e.code||"ошибка")); }
+}
+function battleScore(b,side){
+  const name=side==="a"?b.a:b.b;
+  return okReports().filter(r=>{
+    if(r.day!==b.date) return false;
+    if(b.mode==="friend"){
+      const memberIds=side==="a"?b.aUids:b.bUids;
+      return memberIds?memberIds.includes(r.uid):r.uid===(side==="a"?b.aUid:b.bUid);
+    }
+    if(b.mode==="school") return reportSchool(r)===name;
+    return r.team===name;
+  }).reduce((a,r)=>a+(r.items||0),0);
+}
+function renderRank(){
+  const L=S.rankLeague, lb=leaderboard(L), max=lb[0]?.points||1;
+  const myKey = L==="district"?districtName(S.pub.district): L==="people"?S.uid : L==="school"?S.pub.org : S.pub.team;
+  const battles=[...S.battles].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  const today=dayKey();
+  const connections=S.priv.connections||[];
+  $("#s-rank").innerHTML=`<div><p class="eyebrow">Соревнования</p><h1>Рейтинг</h1></div>
+    <div class="seg" id="rkSeg">${[["class","Классы"],["school","Школы"],["company","Компании"],["district","Районы"],["people","Люди"]].map(([k,t])=>`<button type="button" data-l="${k}" aria-pressed="${L===k}">${t}</button>`).join("")}</div>
+    <div class="card"><div class="lb">${lb.length?lb.slice(0,10).map((r,i)=>`<div class="lb-row ${i===0?"top1":""}"><span class="pos">${i+1}</span>
+        <div class="min-width-0"><b class="wrap-anywhere">${esc(r.name)}${r.key===myKey?' <span class="badge b-ok">вы</span>':""}</b><div class="lb-bar" data-percent="${Math.max(4,r.points/max*100)}"></div></div>
+        <span class="num text-right"><b>${r.points}</b><br><span class="small muted">${r.items} предм.</span></span></div>`).join("")
+      : emptyBox(I.trophy,"Рейтинг пока пуст", L==="class"?"Отчёты учеников с указанным классом попадут сюда.":L==="school"?"Подтверждённые отчёты учеников появятся в рейтинге школ.":L==="company"?"Сотрудники, указавшие компанию, соревнуются здесь.":"Первый подтверждённый отчёт откроет рейтинг.")}</div>
+      <button class="btn sm" type="button" id="rkAI">${I.chart} ИИ-разбор рейтинга</button><div id="rkAIOut" class="md small"></div></div>
+    <div class="card"><div class="row between"><div><h2>Друзья и близкие</h2><p class="small muted">Добавьте семью, пару, друзей или коллег.</p></div>
+      <button class="btn primary sm" type="button" id="connectionNew">${I.plus} Добавить</button></div>
+      <p class="small muted">Список виден только вам. Чтобы участие человека учитывалось в баттлах, свяжите его с аккаунтом участника.</p>
+      ${connections.length?connections.map(c=>`<div class="connection-row"><span class="connection-avatar">${I.heart}</span><span class="min-width-0"><b class="wrap-anywhere">${esc(c.name)}</b><br><span class="badge b-plain">${esc(relationshipName(c.relation))}</span>${c.profileId?` <span class="badge b-ok">Участник приложения</span>`:` <span class="small muted">аккаунт не привязан</span>`}</span>
+        <button class="x connection-remove" type="button" data-remove-connection="${esc(c.id)}" aria-label="Удалить ${esc(c.name)}">${I.x}</button></div>`).join(""):emptyBox(I.users,"Пока никого нет","Добавьте близкого человека по имени и выберите ваш статус отношений.")}</div>
+    <div class="card"><div class="row between"><h2>Баттлы</h2><button class="btn sm" type="button" id="btNew">${I.plus} Вызов</button></div>
+      <p class="small muted">Классы, школы, компании или друзья сравнивают количество собранных предметов за выбранный день.</p>
+      ${battles.length?battles.map(b=>{ const a=battleScore(b,"a"), c=battleScore(b,"b"), tot=a+c||1, done=b.date<today;
+        return `<div class="vs card flat"><div class="row between"><b class="small">${esc(b.title||"Баттл")}</b><span class="badge ${b.date===today?"b-bad":done?"b-plain":"b-warn"}">${b.date===today?"Сегодня":done?"Завершён":b.date.split("-").reverse().join(".")}</span></div>
+          <div class="row between small"><span><b>${esc(b.a)}</b> · ${a}</span><span>${c} · <b>${esc(b.b)}</b></span></div>
+          <div class="vs-bar"><i class="vs-fill vs-fill-a" data-percent="${a/tot*100}"></i><i class="vs-fill vs-fill-b" data-percent="${c/tot*100}"></i></div>
+          ${done&&a!==c?`<span class="small">Победитель: <b>${esc(a>c?b.a:b.b)}</b></span>`:""}</div>`; }).join("")
+      : emptyBox(I.users,"Баттлов пока нет","Бросьте вызов другой команде или другу.")}</div>
+    <div class="card" id="rewards"><div class="row between"><h2>Бонусы спонсоров</h2><span class="pill">${I.coin}<span class="num">${balance()}</span></span></div>
+      <p class="small muted">Партнёры-примеры. Баллы списываются при получении кода.</p>
+      ${REWARDS.map(r=>`<div class="reward"><span class="ri">${I.gift}</span><span><b>${r.t}</b><br><span class="small muted">${r.s}</span></span><button class="btn sm ${balance()>=r.cost?"sun":""}" type="button" data-rw="${r.id}" ${balance()>=r.cost?"":"disabled"}>${r.cost}</button></div>`).join("")}
+      ${(S.priv.rewards||[]).length?`<div class="card flat gap-6"><h3>Мои коды</h3>${S.priv.rewards.slice().reverse().map(x=>`<div class="row between small"><span>${esc(x.t)}</span><b class="num select-all">${esc(x.code)}</b></div>`).join("")}</div>`:""}</div>`;
+  const root=$("#s-rank");
+  applyPercentValues(root);
+  root.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ S.rankLeague=b.dataset.l; renderRank(); });
+  root.querySelectorAll("[data-rw]").forEach(b=>b.onclick=()=>redeem(b.dataset.rw));
+  $("#connectionNew").onclick=openConnection;
+  root.querySelectorAll("[data-remove-connection]").forEach(b=>b.onclick=()=>removeConnection(b.dataset.removeConnection));
+  $("#btNew")&&($("#btNew").onclick=openBattle);
+  $("#rkAI").onclick=async()=>{
+    const out=$("#rkAIOut"), b=$("#rkAI"); b.disabled=true; out.textContent="ИИ думает…";
+    const data={league:L,top:lb.slice(0,10).map(r=>({name:L==="people"?"участник":r.name,points:r.points,items:r.items})),myTeam:S.pub.team,battles:battles.map(x=>({a:x.a,b:x.b,date:x.date,scoreA:battleScore(x,"a"),scoreB:battleScore(x,"b")}))};
+    try{ const {text}=await aiText(`Ты — спортивный комментатор эко-соревнований «Таза Алматы». Данные: ${JSON.stringify(data)}. По-русски, до 80 слов, списком "- ": кто лидирует, кто быстро растёт или отстаёт, что сделать команде «${S.pub.team||"пользователя"}», чтобы подняться. Опирайся только на данные; если их мало — подбодри начать.`,{onText:({text})=>{out.innerHTML=md(text);}}); out.innerHTML=md(text); }
+    catch(e){ out.textContent=aiErrText(e); } b.disabled=false;
+  };
+}
+async function redeem(id){
+  const r=REWARDS.find(x=>x.id===id); if(!r||balance()<r.cost) return;
+  const code="TAZA-"+Math.random().toString(36).slice(2,7).toUpperCase();
+  await saveMe(null,{spent:(S.priv.spent||0)+r.cost, rewards:[...(S.priv.rewards||[]),{t:r.t,code,at:Date.now()}]});
+  toast("Код получен: "+code); renderRank();
+}
+function openBattle(){
+  const modes=[];
+  if(S.pub.league==="class"&&S.pub.team) modes.push(["class","Класс"]);
+  if((S.pub.group==="school"||S.pub.role==="teacher")&&S.pub.org) modes.push(["school","Школа"]);
+  if(S.pub.league==="company"&&S.pub.team) modes.push(["company","Компания"]);
+  modes.push(["friend","Друг"]);
+  const labels={class:"Класс против класса",school:"Школа против школы",company:"Компания против компании",friend:"Друг против друга"};
+  const today=dayKey(), nextDay=new Date(); nextDay.setDate(nextDay.getDate()+1);
+  const tomorrow=dayKey(nextDay);
+  const teamsFor=mode=>{
+    if(mode==="school") return [...new Set([...S.profiles.filter(p=>(p.group==="school"||p.role==="teacher")&&p.org).map(p=>p.org),...S.reports.map(r=>r.school).filter(Boolean)])].filter(t=>t!==S.pub.org);
+    const league=mode==="friend"?null:mode;
+    return [...new Set([...S.profiles.filter(p=>p.league===league&&p.team).map(p=>p.team),...S.reports.filter(r=>r.league===league&&r.team).map(r=>r.team)])].filter(t=>t!==S.pub.team);
+  };
+  const modeField=()=>`<label class="f">Формат соревнования<select id="btMode">${modes.map(([id])=>`<option value="${id}">${labels[id]}</option>`).join("")}</select></label>`;
+  openSheet(`${sheetHead("Бросить вызов")}
+    ${modeField()}
+    <p class="small muted" id="btMine"></p>
+    <div id="btOpponent"></div>
+    <label class="f">Дата<input type="date" id="btD" value="${tomorrow}" min="${today}"></label>
+    <label class="f">Название<input type="text" id="btT" maxlength="50" placeholder="Кто соберёт больше бутылок"></label>
+    <p class="small muted" id="btErr" role="alert"></p>
+    <button class="btn primary block" type="button" id="btSave">Бросить вызов</button>`, sheet=>{
+    let friendSides=null;
+    const drawOpponent=()=>{
+      const mode=$("#btMode",sheet).value;
+      const mine=mode==="friend"?S.pub.name:mode==="school"?S.pub.org:S.pub.team;
+      $("#btMine",sheet).innerHTML=mode==="friend"?"Добавьте участников в обе команды. Участник может быть только в одной команде.":`Ваша сторона: <b>${esc(mine||"профиль")}</b>`;
+      if(mode==="friend"){
+        const friends=(S.priv.connections||[]).filter(c=>c.profileId).map(c=>{
+          const profile=S.profiles.find(p=>p.id===c.profileId);
+          return profile?{...profile,relation:c.relation}:null;
+        }).filter(Boolean);
+        const sides={a:[S.uid],b:[]};
+        friendSides=sides;
+        const renderFriends=()=>{
+          const names=ids=>ids.map(id=>friends.find(p=>p.id===id)?.name||(id===S.uid?S.pub.name:"")).filter(Boolean);
+          const sideMarkup=(side,title)=>`<fieldset class="team-pick"><legend>${title} · ${names(sides[side]).length} участн.</legend>
+            ${friends.length?friends.map(p=>`<label><input type="checkbox" data-side="${side}" value="${esc(p.id)}" ${sides[side].includes(p.id)?"checked":""} ${sides[side==="a"?"b":"a"].includes(p.id)?"disabled":""}><span>${esc(p.name)} · ${esc(relationshipName(p.relation))}${p.team?" · "+esc(p.team):""}</span></label>`).join(""):'<span class="small muted">Добавьте близкого и привяжите его аккаунт участника.</span>'}
+          </fieldset>`;
+          $("#btOpponent",sheet).innerHTML=`<div class="friend-teams">${sideMarkup("a","Ваша команда")} ${sideMarkup("b","Команда друзей")}</div>`;
+          $("#btOpponent",sheet).querySelectorAll("[data-side]").forEach(input=>input.onchange=()=>{
+            const side=input.dataset.side, ids=sides[side];
+            sides[side]=input.checked?[...ids,input.value]:ids.filter(id=>id!==input.value);
+            renderFriends();
+          });
+          $("#btSave",sheet).disabled=!sides.a.length||!sides.b.length;
+        };
+        renderFriends();
+      }else{
+        friendSides=null;
+        const teams=teamsFor(mode), own=mode==="school"?S.pub.org:S.pub.team;
+        $("#btOpponent",sheet).innerHTML=`<label class="f">Соперник<input type="text" id="btTeam" list="btList" maxlength="60" placeholder="${mode==="school"?"Название школы":mode==="class"?"Название класса":"Название компании"}" required><datalist id="btList">${teams.map(t=>`<option value="${esc(t)}">`).join("")}</datalist></label>`;
+        $("#btTeam",sheet).value="";
+        $("#btSave",sheet).disabled=!own;
+      }
+    };
+    $("#btMode",sheet).onchange=drawOpponent;
+    drawOpponent();
+    $("#btSave",sheet).onclick=async()=>{
+      const mode=$("#btMode",sheet).value, date=$("#btD",sheet).value;
+      if(!date){ $("#btErr",sheet).textContent="Укажите дату соревнования."; return; }
+      let battle;
+      if(mode==="friend"){
+        const sides=friendSides;
+        const members=ids=>ids.map(id=>({id,name:S.profiles.find(p=>p.id===id)?.name||(id===S.uid?S.pub.name:"")})).filter(p=>p.name);
+        const a=members(sides?.a||[]), b=members(sides?.b||[]);
+        if(!a.length||!b.length){ $("#btErr",sheet).textContent="Добавьте хотя бы одного участника в каждую команду."; return; }
+        battle={mode,a:a.map(p=>p.name).join(" + "),b:b.map(p=>p.name).join(" + "),aUids:a.map(p=>p.id),bUids:b.map(p=>p.id)};
+      }else{
+        const a=mode==="school"?S.pub.org:S.pub.team, b=$("#btTeam",sheet).value.trim();
+        if(!a){ $("#btErr",sheet).textContent="Укажите школу, класс или компанию в профиле."; return; }
+        if(!b||b===a){ $("#btErr",sheet).textContent="Укажите другого соперника."; return; }
+        battle={mode,a,b};
+      }
+      try{ await Store.add("battles",{...battle,date,title:$("#btT",sheet).value.trim()||"Кто соберёт больше",uid:S.uid,at:Date.now()}); closeSheet(); toast("Вызов создан!"); }
+      catch(e){ $("#btErr",sheet).textContent="Не удалось: "+(e.code||"ошибка"); }
+    };
+  });
+}
+
+/* ============ PET (eco-tamagotchi) ============ */
+function petSVG(stage,food,mood,size){
+  const hungry=food<35, sad=mood<35;
+  const body=hungry?"color-mix(in srgb,var(--sun) 55%,#b9b39a)":"var(--sun)";
+  const leaves=["", `<path d="M60 22c-2-12 6-18 14-16-1 10-8 16-14 16z" fill="var(--leaf)"/>`,
+    `<path d="M60 22c-2-12 6-18 14-16-1 10-8 16-14 16z" fill="var(--leaf)"/><path d="M58 22c-8-8-16-6-18 0 8 4 14 3 18 0z" fill="var(--leaf)"/>`,
+    `<path d="M60 24V6" stroke="var(--forest)" stroke-width="3"/><path d="M60 12c0-10 10-14 16-10-2 8-9 11-16 10z" fill="var(--leaf)"/><path d="M60 16c-6-8-15-8-18-3 7 5 13 5 18 3z" fill="var(--leaf)"/><path d="M60 8c4-6 2-8 0-8-3 2-3 5 0 8z" fill="var(--leaf)"/>`,
+    `<path d="M60 26V8" stroke="var(--forest)" stroke-width="3"/><circle cx="60" cy="6" r="14" fill="var(--leaf)"/><circle cx="46" cy="14" r="10" fill="var(--leaf)"/><circle cx="74" cy="14" r="10" fill="var(--leaf)"/><circle cx="52" cy="4" r="3" fill="#f6b7c1"/><circle cx="68" cy="8" r="3" fill="#f6b7c1"/><circle cx="60" cy="-2" r="3" fill="#f6b7c1"/><circle cx="76" cy="16" r="3.2" fill="var(--berry)"/>`][stage];
+  const mouth = sad||hungry ? `<path d="M50 78c6-5 14-5 20 0" stroke="#1b2a1f" stroke-width="3" fill="none" stroke-linecap="round"/>` : `<path d="M48 72c7 8 17 8 24 0" stroke="#1b2a1f" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  const eyes = hungry ? `<path d="M40 60h10M70 60h10" stroke="#1b2a1f" stroke-width="3" stroke-linecap="round"/>` : `<circle cx="45" cy="60" r="5" fill="#1b2a1f"/><circle cx="75" cy="60" r="5" fill="#1b2a1f"/><circle cx="47" cy="58" r="1.6" fill="#fff"/><circle cx="77" cy="58" r="1.6" fill="#fff"/>`;
+  return `<svg class="${size?"":"pet-svg"}" ${size?`width="${size}" height="${size}"`:""} viewBox="0 -18 120 136" role="img" aria-label="Эко-питомец">
+    <ellipse cx="60" cy="112" rx="34" ry="6" fill="#000" opacity=".1"/>
+    ${leaves}
+    <path d="M60 20C34 20 20 46 20 70s18 40 40 40 40-16 40-40S86 20 60 20z" fill="${body}"/>
+    <ellipse cx="36" cy="74" rx="7" ry="4" fill="var(--berry)" opacity="${sad?0:.35}"/><ellipse cx="84" cy="74" rx="7" ry="4" fill="var(--berry)" opacity="${sad?0:.35}"/>
+    ${eyes}${mouth}</svg>`;
+}
+function renderPet(){
+  const pet=petNow(), st=petStage(pet.xp), next=STAGES[st+1];
+  const mood = pet.food<35?"Я проголодался… Собери немного мусора — так я питаюсь!" : pet.mood<35?"Мне скучно. Ответишь на мой вопрос?" : "Мне хорошо! Давай узнаем что-то новое про природу.";
+  $("#s-pet").innerHTML=`<div><p class="eyebrow">Эко-тамагочи</p><h1>${esc(pet.name||"Жасыл")}</h1></div>
+    <div class="pet-stage">${petSVG(st,pet.food,pet.mood)}
+      <div class="msg bot pet-message">${mood}</div>
+      <span class="badge b-ok">${STAGES[st][1]}${next?` · до «${next[1]}» ${next[0]-pet.xp} XP`:""}</span></div>
+    <div class="card stack-8">
+      <div class="row between small"><span>Сытость</span><b class="num">${pet.food}%</b></div><div class="bar"><i class="fill-leaf" data-percent="${pet.food}"></i></div>
+      <div class="row between small"><span>Настроение</span><b class="num">${pet.mood}%</b></div><div class="bar"><i class="fill-sun" data-percent="${pet.mood}"></i></div>
+      <div class="row between small"><span>Опыт</span><b class="num">${pet.xp} XP</b></div></div>
+    <div class="grid2"><button class="btn primary" type="button" id="ptFeed">${I.cam} Покормить</button><button class="btn sun" type="button" id="ptQ">${I.spark} Вопрос</button></div>
+    <div id="quizBox"></div>
+    <div class="card"><h2>Поболтать с питомцем</h2><div class="chat" id="petChat">${S.petTurns.length?S.petTurns.map(t=>`<div class="msg ${t.role==="user"?"me":"bot"}">${esc(t.content)}</div>`).join(""):`<div class="msg bot">Привет! Я ${esc(pet.name||"Жасыл")}, маленький росток из Алматы. Спроси меня о природе!</div>`}</div>
+      <form class="composer" id="petForm"><input type="text" id="petIn" maxlength="200" placeholder="Напиши Жасылу…" autocomplete="off"><button class="btn primary" type="submit" aria-label="Отправить">${I.send}</button></form></div>`;
+  applyPercentValues($("#s-pet"));
+  $("#ptFeed").onclick=()=>openReport();
+  $("#ptQ").onclick=askQuiz;
+  $("#petForm").onsubmit=petChat;
+  if(S.quiz) drawQuiz();
+}
+async function askQuiz(){
+  const b=$("#ptQ"); b.disabled=true;
+  const box=$("#quizBox"); box.innerHTML=`<div class="card"><div class="row"><span class="spin"></span><span class="small">${esc(petNow().name||"Жасыл")} придумывает вопрос…</span></div></div>`;
+  const topic=QUIZ_TOPICS[Math.floor(Math.random()*QUIZ_TOPICS.length)];
+  const who={kid:"дошкольника 5–6 лет (очень просто)",school:"школьника",teen:"подростка",adult:"взрослого",senior:"взрослого"}[S.pub.group]||"школьника";
+  let q=null;
+  try{
+    q=await aiJSON(`Ты — Жасыл, добрый эко-тамагочи из Алматы. Придумай 1 вопрос викторины для ${who} на тему «${topic}». Факты должны быть общеизвестными и верными; для времени разложения указывай «примерно». Не повторяй вопросы: ${S.quizSeen.slice(-6).join(" | ")||"—"}.
+Верни ТОЛЬКО JSON: {"question":"…","options":["…","…","…","…"],"correct":индекс 0-3,"fact":"1–2 предложения интересного объяснения"}`,{modelTier:"quick",cache:false});
+    if(!q||!Array.isArray(q.options)||q.options.length<2||typeof q.correct!=="number") q=null;
+  }catch(e){ if(e.code==="not_granted"||e.code==="unavailable") toast("ИИ недоступен — вопрос из базы Жасыла"); }
+  if(!q){ const pool=QUIZ_BANK.filter(x=>!S.quizSeen.includes(x.question)); q=(pool.length?pool:QUIZ_BANK)[Math.floor(Math.random()*(pool.length||QUIZ_BANK.length))]; }
+  S.quizSeen.push(q.question); S.quiz={...q,answered:null};
+  drawQuiz(); b.disabled=false;
+}
+function drawQuiz(){
+  const q=S.quiz, box=$("#quizBox"); if(!q||!box) return;
+  box.innerHTML=`<div class="card"><span class="ai-tag">${I.spark} Вопрос от Жасыла</span><h3 class="quiz-title">${esc(q.question)}</h3>
+    <div class="stack-8">${q.options.map((o,i)=>`<button type="button" class="quiz-opt ${q.answered!=null?(i===q.correct?"right":i===q.answered?"wrong":""):""}" data-q="${i}" ${q.answered!=null?"disabled":""}>${esc(o)}</button>`).join("")}</div>
+    ${q.answered!=null?`<div class="ai-box ${q.answered===q.correct?"ok":"warn"}"><b>${q.answered===q.correct?"Верно! +5 XP, +1 балл":"Почти! Правильный ответ подсвечен"}</b><p class="small">${esc(q.fact||"")}</p></div>`:""}</div>`;
+  box.querySelectorAll("[data-q]").forEach(b=>b.onclick=async()=>{
+    q.answered=+b.dataset.q; const right=q.answered===q.correct; drawQuiz();
+    const pet=petNow(); await saveMe(right?{points:(S.pub.points||0)+1}:null,{pet:{...pet,mood:clamp(pet.mood+(right?12:4),0,100),xp:pet.xp+(right?5:1),ts:Date.now()}});
+    if(S.tab==="pet"){ const keep=S.quiz; renderPet(); S.quiz=keep; drawQuiz(); }
+  });
+}
+async function petChat(ev){
+  ev.preventDefault(); const inp=$("#petIn"), text=inp.value.trim(); if(!text) return; inp.value="";
+  const pet=petNow(), chat=$("#petChat");
+  S.petTurns.push({role:"user",content:text}); S.petTurns=S.petTurns.slice(-12);
+  chat.insertAdjacentHTML("beforeend",`<div class="msg me">${esc(text)}</div><div class="msg bot" id="petLive">…</div>`);
+  const rules=`Ты — ${pet.name||"Жасыл"}, эко-тамагочи в приложении «Таза Алматы»: маленький солнечный росток из Алматы. Собеседник: ${({kid:"дошкольник",school:"школьник",teen:"подросток",adult:"взрослый",senior:"пожилой человек"})[S.pub.group]} по имени ${S.pub.name}. Говори по-русски, коротко (1–3 предложения), тепло и просто. Твоя сытость ${pet.food}%, настроение ${pet.mood}%: если голоден — мягко попроси собрать мусор, ведь ты питаешься собранным мусором. Иногда задавай встречный вопрос про природу или отходы. Никогда не спрашивай адрес, школу, телефон или фото людей и не предлагай встречаться. Если собеседник пишет о чём-то опасном или грустном — бережно посоветуй рассказать взрослому, которому он доверяет. Отвечай только как ${pet.name||"Жасыл"}.`;
+  try{
+    const {text:ans}=await aiText([{role:"user",content:rules},{role:"assistant",content:"Поняла, отвечаю как эко-питомец."},...S.petTurns],{cache:false,modelTier:"quick",onText:({text})=>{ const l=$("#petLive"); if(l) l.textContent=text; }});
+    S.petTurns.push({role:"assistant",content:ans});
+  }catch(e){ S.petTurns.pop(); const l=$("#petLive"); if(l) l.textContent=aiErrText(e); return; }
+  $("#petLive")?.removeAttribute("id");
+}
+
+/* ============ AI ASSISTANT ============ */
+function assistantContext(){
+  return `Пользователь: ${S.pub.name}, группа ${S.pub.group}, роль ${S.pub.roleTitle}, район ${districtName(S.pub.district)}, команда ${S.pub.team||"нет"}, баллы ${balance()}.
+Данные приложения: ${visibleSpots().length} активных точек загрязнения (топ: ${visibleSpots().slice(0,4).map(s=>(s.title||s.kind)+" — "+districtName(s.district)).join("; ")||"нет"}); ближайшие субботники: ${upcomingEvents().slice(0,3).map(e=>e.title+", "+districtName(e.district)+", "+fmtDate(e.date)).join("; ")||"нет"}.`;
+}
+const AI_RULES=()=>`Ты — ИИ-ассистент приложения «Таза Алматы» (экология Алматы: субботники, карта загрязнений, соревнования, сортировка). Отвечай по-русски, кратко и по делу, с конкретными шагами, списком "- " где уместно. Не выдумывай адреса, телефоны и названия конкретных пунктов приёма: если нужен адрес — посоветуй проверить в 2ГИС или в акимате района. ${isKid()?"Собеседник — ребёнок: пиши просто и бережно, без страшных подробностей.":""}\n${assistantContext()}`;
+const QUICK=["Как правильно сортировать мусор дома?","Придумай субботник для нашего класса","Где в карте сейчас хуже всего?","Как убедить коллег участвовать?"];
+function chatHTML(){ return S.aiTurns.length?S.aiTurns.map(t=>`<div class="msg ${t.role==="user"?"me":"bot"} ${t.role==="user"?"":"md"}">${t.role==="user"?esc(t.content):md(t.content)}</div>`).join(""):`<div class="msg bot">Привет! Я помогу с сортировкой, субботниками и разбором карты загрязнений. Спросите что угодно.</div>`; }
+function assistantBody(){
+  return `${S.sample?"":`<div class="ai-box warn"><b>ИИ подключается через Claude</b><span class="small">Откройте приложение внутри Claude, чтобы задавать вопросы, получать планы и проверять фото с помощью ИИ.</span></div>`}
+    <div class="chips">${QUICK.map(q=>`<button type="button" class="chip" data-qk="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <div class="chat" id="aiChat">${chatHTML()}</div>
+    <form class="composer" id="aiForm"><input type="text" id="aiIn" maxlength="500" placeholder="Спросите ИИ…" autocomplete="off"><button class="btn primary" type="submit" aria-label="Отправить">${I.send}</button></form>`;
+}
+function bindAssistant(root){
+  root.querySelectorAll("[data-qk]").forEach(b=>b.onclick=()=>{ $("#aiIn",root).value=b.dataset.qk; sendAI(root); });
+  $("#aiForm",root).onsubmit=e=>{ e.preventDefault(); sendAI(root); };
+}
+function openAssistant(){ openSheet(`${sheetHead("ИИ-ассистент")}${assistantBody()}`, sheet=>bindAssistant(sheet)); }
+function renderAIScreen(){
+  const el=$("#s-ai");
+  el.innerHTML=`<div><p class="eyebrow">Помощник и аналитика</p><h1>ИИ-ассистент</h1></div><div class="card">${assistantBody()}</div>`;
+  bindAssistant(el);
+}
+async function sendAI(root){
+  const inp=$("#aiIn",root), text=inp.value.trim(); if(!text) return; inp.value="";
+  S.aiTurns.push({role:"user",content:text}); S.aiTurns=S.aiTurns.slice(-14);
+  const chat=$("#aiChat",root); chat.innerHTML=chatHTML()+`<div class="msg bot md" id="aiLive">ИИ думает…</div>`;
+  try{
+    const {text:ans}=await aiText([{role:"user",content:AI_RULES()},{role:"assistant",content:"Понял. Готов помогать."},...S.aiTurns],{cache:false,onText:({text})=>{ const l=$("#aiLive",root); if(l) l.innerHTML=md(text); }});
+    S.aiTurns.push({role:"assistant",content:ans}); chat.innerHTML=chatHTML();
+  }catch(e){ S.aiTurns.pop(); const l=$("#aiLive",root); if(l) l.textContent=aiErrText(e); }
+  chat.lastElementChild?.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+boot();
+</script>
+
+</body></html>
